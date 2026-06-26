@@ -1,42 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#080808" />
-  <meta name="description" content="ENJC Sports Club — Live cricket scorecard. Game on Fire." />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <meta name="theme-color" content="#FFFFFF"/>
+  <meta name="description" content="ENJC Sports Club — Live cricket scorecard. Game on Fire."/>
   <title>ENJC Sports Club</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png" />
-  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png"/>
+  <link rel="manifest" href="manifest.json"/>
 </head>
 <body>
 
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="logo-area">
-    <!-- Inline SVG lion shield logo -->
     <svg class="logo-shield" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M40 4L70 16V44C70 60 56 72 40 76C24 72 10 60 10 44V16L40 4Z" fill="#0F0F0F" stroke="#C9961A" stroke-width="2"/>
+      <path d="M40 4L70 16V44C70 60 56 72 40 76C24 72 10 60 10 44V16L40 4Z" fill="#FFF8E8" stroke="#C9961A" stroke-width="2"/>
       <path d="M40 9L65 19.5V44C65 57.5 53.5 68 40 71.5C26.5 68 15 57.5 15 44V19.5L40 9Z" fill="none" stroke="#C9961A" stroke-width="0.8" opacity="0.5"/>
-      <!-- Crown -->
       <path d="M29 20H51M29 20L26 15L31.5 18L35 13L40 18L45 13L48.5 18L54 15L51 20" stroke="#C9961A" stroke-width="1.5" stroke-linejoin="round"/>
-      <!-- Lion head simplified -->
-      <ellipse cx="40" cy="35" rx="10" ry="9" fill="#1A1400" stroke="#C9961A" stroke-width="1"/>
-      <!-- mane -->
+      <ellipse cx="40" cy="35" rx="10" ry="9" fill="#FFF8E8" stroke="#C9961A" stroke-width="1"/>
       <path d="M30 34C28 30 29 26 33 25M50 34C52 30 51 26 47 25M31 38C27 38 25 42 28 44M49 38C53 38 55 42 52 44" stroke="#C9961A" stroke-width="1.2" stroke-linecap="round"/>
-      <!-- face -->
       <circle cx="37" cy="33" r="1.2" fill="#C9961A"/>
       <circle cx="43" cy="33" r="1.2" fill="#C9961A"/>
       <path d="M37 38 Q40 40 43 38" stroke="#C9961A" stroke-width="1" stroke-linecap="round"/>
-      <!-- Laurels -->
       <path d="M20 55C18 52 19 48 22 47M20 55C21 58 24 59 26 57" stroke="#C9961A" stroke-width="1.2" stroke-linecap="round"/>
       <path d="M60 55C62 52 61 48 58 47M60 55C59 58 56 59 54 57" stroke="#C9961A" stroke-width="1.2" stroke-linecap="round"/>
-      <!-- ENJC text -->
       <text x="40" y="62" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="11" font-weight="700" fill="#C9961A" letter-spacing="1">ENJC</text>
-      <!-- Star -->
       <path d="M40 68 L40.6 69.8 H42.5 L41 70.9 L41.6 72.7 L40 71.6 L38.4 72.7 L39 70.9 L37.5 69.8 H39.4Z" fill="#C9961A"/>
     </svg>
     <div>
@@ -51,38 +43,78 @@
 
 <!-- ═══ PAGE: HOME ═══ -->
 <div class="page active" id="page-home">
-  <div style="padding:14px 12px 0;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <span class="sec-label" style="margin:0">Recent Matches</span>
-      <button onclick="document.querySelector('[data-page=new]').click()"
-        style="background:var(--gold-dim);border:0.5px solid var(--gold-line);color:var(--gold);
-               border-radius:20px;padding:5px 14px;font-family:var(--font-display);
-               font-size:12px;font-weight:700;letter-spacing:0.05em;">
-        + New Match
-      </button>
+  <div class="home-hero">
+    <div class="home-title">Choose Your Game</div>
+    <div class="home-sub">Select a sport to start scoring</div>
+  </div>
+
+  <!-- Sport cards -->
+  <div class="sport-grid">
+    <div class="sport-card sport-active" onclick="window.gotoNewMatch('cricket')">
+      <div class="sport-icon">🏏</div>
+      <div class="sport-name">Cricket</div>
+      <div class="sport-tag">Live Scoring</div>
+    </div>
+    <div class="sport-card sport-soon" onclick="window.gotoTournament()">
+      <div class="sport-icon">🏆</div>
+      <div class="sport-name">Tournament</div>
+      <div class="sport-tag">Upcoming</div>
+    </div>
+    <div class="sport-card sport-coming">
+      <div class="sport-icon">⚽</div>
+      <div class="sport-name">Football</div>
+      <div class="sport-tag coming-tag">Coming Soon</div>
+    </div>
+    <div class="sport-card sport-coming">
+      <div class="sport-icon">🏐</div>
+      <div class="sport-name">Volleyball</div>
+      <div class="sport-tag coming-tag">Coming Soon</div>
     </div>
   </div>
+
+  <!-- Recent matches -->
+  <div class="home-section-bar">
+    <span class="sec-label" style="margin:0">Recent Matches</span>
+  </div>
   <div style="padding:0 12px 16px;" id="match-list"></div>
+</div>
+
+<!-- ═══ PAGE: TOURNAMENT (placeholder) ═══ -->
+<div class="page" id="page-tournament">
+  <div style="padding:20px 16px 0;">
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px;">🏆 Tournaments</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:20px;">Upcoming events will appear here</div>
+    <div class="empty-state">
+      <div class="empty-icon">📅</div>
+      <div class="empty-text">No tournaments announced yet.<br>Check back soon!</div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ PAGE: NEW MATCH ═══ -->
 <div class="page" id="page-new">
   <div style="padding:14px 12px 28px;">
-    <div style="font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--gold-hi);margin-bottom:18px;">
-      🏏 New Match
-    </div>
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px;">🏏 New Cricket Match</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:18px;">Set up teams and format</div>
+
     <div class="form-group">
-      <label class="form-label">Format (Overs)</label>
+      <label class="form-label">Format</label>
       <div class="overs-grid">
-        <button class="overs-btn selected" data-overs="5">5</button>
-        <button class="overs-btn" data-overs="10">10</button>
-        <button class="overs-btn" data-overs="20">20</button>
-        <button class="overs-btn" data-overs="50">50</button>
+        <button class="overs-btn selected" data-overs="5">5 ov</button>
+        <button class="overs-btn" data-overs="10">10 ov</button>
+        <button class="overs-btn" data-overs="20">20 ov</button>
+        <button class="overs-btn" data-overs="50">50 ov</button>
+        <button class="overs-btn" data-overs="custom">Custom</button>
       </div>
     </div>
+    <div class="form-group" id="custom-overs-group" style="display:none;">
+      <label class="form-label">Custom Overs</label>
+      <input class="form-input" id="custom-overs-input" type="number" min="1" max="100" placeholder="e.g. 15"/>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Team 1 Name</label>
-      <input class="form-input" id="team1-name" placeholder="e.g. ENJC Lions" />
+      <input class="form-input" id="team1-name" placeholder="e.g. ENJC Lions"/>
     </div>
     <div class="form-group">
       <label class="form-label">Team 1 Players</label>
@@ -91,7 +123,7 @@
     <div class="divider" style="margin:20px 0;"></div>
     <div class="form-group">
       <label class="form-label">Team 2 Name</label>
-      <input class="form-input" id="team2-name" placeholder="e.g. Chennai Kings" />
+      <input class="form-input" id="team2-name" placeholder="e.g. Chennai Kings"/>
     </div>
     <div class="form-group">
       <label class="form-label">Team 2 Players</label>
@@ -103,7 +135,6 @@
 
 <!-- ═══ PAGE: LIVE SCORECARD ═══ -->
 <div class="page" id="page-score">
-
   <div class="scoreboard">
     <div class="score-header">
       <span class="score-header-txt" id="sc-header-txt">—</span>
@@ -133,7 +164,6 @@
     </div>
   </div>
 
-  <!-- Target bar (innings 2) -->
   <div class="target-bar hidden" id="target-bar">
     <div>
       <div class="need-label">Need to win</div>
@@ -147,7 +177,6 @@
     </div>
   </div>
 
-  <!-- Batting -->
   <div class="section" style="padding-top:2px;">
     <div class="sec-label">Batting</div>
     <div class="stats-card">
@@ -160,7 +189,6 @@
     </div>
   </div>
 
-  <!-- Bowling -->
   <div class="section" style="padding-top:2px;">
     <div class="sec-label">Bowling</div>
     <div class="stats-card">
@@ -173,7 +201,6 @@
     </div>
   </div>
 
-  <!-- Score entry -->
   <div class="entry-panel">
     <div class="entry-head">Add Ball</div>
     <div class="run-btns">
@@ -192,7 +219,6 @@
       <button class="rb rb-undo" onclick="undoLastBall()">↩ Undo</button>
     </div>
   </div>
-
 </div>
 
 <!-- ═══ PAGE: SUMMARY ═══ -->
@@ -212,16 +238,17 @@
     </div>
   </div>
   <div id="summary-scorecards"></div>
-  <button class="share-btn" onclick="shareMatch()">📤 Share Scorecard</button>
+  <div style="display:flex;gap:8px;padding:0 12px 12px;">
+    <button class="share-btn" style="flex:1" onclick="shareMatch()">📤 Share</button>
+    <button class="share-btn" style="flex:1;color:var(--blue)" onclick="exportMatch()">📥 Export</button>
+    <button class="share-btn" style="flex:1;color:var(--red)" onclick="deleteCurrentMatch()">🗑 Delete</button>
+  </div>
 </div>
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <div class="nav-item active" data-page="home">
     <i class="ti ti-home nav-icon"></i><span>Home</span>
-  </div>
-  <div class="nav-item" data-page="new">
-    <i class="ti ti-plus nav-icon"></i><span>New</span>
   </div>
   <div class="nav-item" data-page="score">
     <i class="ti ti-cricket nav-icon"></i><span>Score</span>
@@ -234,20 +261,25 @@
 <!-- MODALS -->
 <div class="modal-overlay" id="select-modal">
   <div class="modal">
-    <div class="modal-title" id="modal-title">
-      Select Player
-      <span class="modal-close" onclick="closeModal()">✕</span>
-    </div>
+    <div class="modal-title" id="modal-title">Select Player<span class="modal-close" onclick="closeModal()">✕</span></div>
     <div class="modal-list" id="modal-list"></div>
   </div>
 </div>
 <div class="modal-overlay" id="wicket-modal">
   <div class="modal">
-    <div class="modal-title">
-      How was he out?
-      <span class="modal-close" onclick="closeModal()">✕</span>
-    </div>
+    <div class="modal-title">How was he out?<span class="modal-close" onclick="closeModal()">✕</span></div>
     <div class="modal-list" id="dismissal-list"></div>
+  </div>
+</div>
+<!-- Delete confirm modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-title">Delete Match?<span class="modal-close" onclick="closeModal()">✕</span></div>
+    <div style="font-size:13px;color:var(--text-2);margin-bottom:16px;">This match will be removed from history. Cannot be undone.</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeModal()" style="flex:1;padding:11px;border-radius:8px;background:var(--bg-3);color:var(--text-2);font-family:var(--font-display);font-size:14px;font-weight:600;">Cancel</button>
+      <button onclick="confirmDelete()" style="flex:1;padding:11px;border-radius:8px;background:rgba(220,38,38,0.1);color:var(--red);border:0.5px solid rgba(220,38,38,0.2);font-family:var(--font-display);font-size:14px;font-weight:600;">Delete</button>
+    </div>
   </div>
 </div>
 
@@ -255,9 +287,7 @@
 
 <script type="module" src="js/app.js"></script>
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>
 </html>

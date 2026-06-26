@@ -12,8 +12,8 @@
   --gold-glow: rgba(156,122,26,0.10);
   --text:      #000000;
   --text-2:    #000000;
-  --text-3:    #000000;
-  --text-4:    #000000;
+  --text-3:    #6B6045;
+  --text-4:    #A0896A;
   --border:    rgba(156,122,26,0.28);
   --blue:      #2563EB;
   --purple:    #7C3AED;
@@ -419,3 +419,67 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 /* ─── UTIL ───────────────────────────────────────────────────── */
 .hidden   { display: none !important; }
 .divider  { height: 0.5px; background: rgba(0,0,0,0.07); margin: 4px 0; }
+/* ═══ HOME PAGE ADDITIONS ═══════════════════════════════════════ */
+.home-hero {
+  padding: 18px 16px 10px;
+}
+.home-title {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  color: var(--gold-hi);
+}
+.home-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+.sport-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 12px 4px;
+}
+.sport-card {
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  border: 0.5px solid var(--border);
+  transition: transform 0.15s, box-shadow 0.15s;
+  background: var(--bg-2);
+}
+.sport-card:active { transform: scale(0.97); }
+.sport-active {
+  border-color: var(--gold-line);
+  box-shadow: 0 2px 12px var(--gold-glow);
+}
+.sport-soon {
+  border-color: rgba(37,99,235,0.2);
+}
+.sport-coming {
+  opacity: 0.5;
+  cursor: default;
+}
+.sport-icon { font-size: 30px; margin-bottom: 6px; }
+.sport-name {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 700;
+  color: var(--gold-hi);
+}
+.sport-tag {
+  font-size: 9px; font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+.coming-tag { color: var(--text-3); }
+
+.home-section-bar {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px;
+}
+
+/* ═══ CUSTOM OVERS GRID ═══════════════════════════════════════ */
+.overs-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; }
+
+/* ═══ EXPORT / DELETE BUTTONS ════════════════════════════════ */
+.action-row { display: flex; gap: 8px; padding: 0 12px 12px; }
