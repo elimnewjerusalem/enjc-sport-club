@@ -1,24 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-/* ─── DESIGN TOKENS ─────────────────────────────────────────── */
+/* ─── DESIGN TOKENS — White bg / Dark Gold theme ──────────────── */
 :root {
-  --bg:        #080808;
-  --bg-2:      #0F0F0F;
-  --bg-3:      #181818;
-  --gold:      #C9961A;
-  --gold-hi:   #E8B84B;
-  --gold-dim:  rgba(201,150,26,0.14);
-  --gold-line: rgba(201,150,26,0.22);
-  --gold-glow: rgba(201,150,26,0.08);
-  --text:      #F0E6CC;
-  --text-2:    #9A8660;
-  --text-3:    #5E5038;
-  --text-4:    #2E2618;
-  --border:    rgba(201,150,26,0.2);
-  --blue:      #60A5FA;
-  --purple:    #C084FC;
-  --green:     #4ADE80;
-  --red:       #F87171;
+  --bg:        #FFFFFF;
+  --bg-2:      #FBF8F1;
+  --bg-3:      #F3EDDD;
+  --gold:      #9C7A1A;
+  --gold-hi:   #B8860B;
+  --gold-dim:  rgba(156,122,26,0.12);
+  --gold-line: rgba(156,122,26,0.32);
+  --gold-glow: rgba(156,122,26,0.10);
+  --text:      #2B2110;
+  --text-2:    #6B5B35;
+  --text-3:    #9C8B61;
+  --text-4:    #C7B98C;
+  --border:    rgba(156,122,26,0.28);
+  --blue:      #2563EB;
+  --purple:    #7C3AED;
+  --green:     #15803D;
+  --red:       #DC2626;
   --font-display: 'Rajdhani', sans-serif;
   --font-body:    'Inter', sans-serif;
   --radius:    12px;
@@ -38,7 +38,7 @@ body {
   padding-bottom: 72px;
 }
 a { text-decoration: none; color: inherit; }
-button { cursor: pointer; border: none; outline: none; font-family: var(--font-display); }
+button { cursor: pointer; border: none; outline: none; font-family: var(--font-display); background:none; }
 button:active { transform: scale(0.96); transition: transform 0.08s; }
 
 /* ─── TOP BAR ────────────────────────────────────────────────── */
@@ -50,12 +50,7 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
   display: flex; align-items: center; justify-content: space-between;
 }
 .logo-area { display: flex; align-items: center; gap: 10px; }
-
-/* Lion shield SVG badge */
-.logo-shield {
-  width: 38px; height: 38px; flex-shrink: 0;
-}
-
+.logo-shield { width: 38px; height: 38px; flex-shrink: 0; }
 .brand-name {
   font-family: var(--font-display);
   font-size: 18px; font-weight: 700;
@@ -71,16 +66,12 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 /* ─── LIVE PILL ──────────────────────────────────────────────── */
 .live-pill {
   display: flex; align-items: center; gap: 5px;
-  background: rgba(74,222,128,0.1);
-  border: 0.5px solid rgba(74,222,128,0.3);
+  background: rgba(21,128,61,0.08);
+  border: 0.5px solid rgba(21,128,61,0.3);
   border-radius: 20px; padding: 4px 11px;
   font-size: 10px; font-weight: 600; color: var(--green);
 }
-.live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green);
-  animation: pulse 1.3s infinite;
-}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.3s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
 /* ─── PAGE ───────────────────────────────────────────────────── */
@@ -93,6 +84,38 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
   text-transform: uppercase; margin-bottom: 8px;
 }
 
+/* ─── HOME HEADER BUTTONS ──────────────────────────────────────── */
+.icon-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--gold-dim); border: 0.5px solid var(--gold-line);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.new-match-btn {
+  background: var(--gold-dim); border: 0.5px solid var(--gold-line); color: var(--gold);
+  border-radius: 20px; padding: 7px 14px; font-family: var(--font-display);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+}
+
+/* ─── GAME SELECT CARDS ───────────────────────────────────────── */
+.game-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg-2); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.game-card:active { border-color: var(--gold); }
+.game-card.coming-soon { opacity: 0.5; cursor: default; }
+.game-icon {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--gold-dim); display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: var(--gold); flex-shrink: 0;
+}
+.game-info { flex: 1; }
+.game-name { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--text); }
+.game-sub  { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+.game-arrow { font-size: 18px; color: var(--text-4); }
+
 /* ─── SCOREBOARD ─────────────────────────────────────────────── */
 .scoreboard {
   background: var(--bg-2);
@@ -104,21 +127,15 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .score-header {
   padding: 9px 14px;
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(201,150,26,0.05);
-  border-bottom: 0.5px solid rgba(201,150,26,0.1);
+  background: rgba(156,122,26,0.06);
+  border-bottom: 0.5px solid rgba(156,122,26,0.14);
 }
-.score-header-txt {
-  font-size: 10px; color: var(--text-2);
-  font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase;
-}
+.score-header-txt { font-size: 10px; color: var(--text-2); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
 .target-badge { font-size: 10px; color: var(--gold-hi); font-weight: 700; }
 
 .score-main { padding: 14px; display: flex; align-items: center; }
 .team-block  { flex: 1; text-align: center; }
-.team-name   {
-  font-size: 10px; color: var(--text-2); margin-bottom: 5px;
-  font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase;
-}
+.team-name   { font-size: 10px; color: var(--text-2); margin-bottom: 5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
 .score-big {
   font-family: var(--font-display); font-size: 50px;
   font-weight: 700; color: var(--text); line-height: 1;
@@ -126,38 +143,35 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .score-big.batting { color: var(--gold-hi); }
 .score-detail { font-size: 11px; color: var(--text-3); margin-top: 3px; }
 .vs-sep {
-  width: 36px; text-align: center; color: #2A2010;
+  width: 36px; text-align: center; color: var(--text-4);
   font-size: 11px; font-weight: 600; flex-shrink: 0;
   font-family: var(--font-display);
 }
 
 .overs-bar { padding: 8px 14px 10px; display: flex; align-items: center; gap: 8px; }
 .over-label { font-size: 10px; color: var(--text-3); }
-.over-prog  { flex: 1; height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.over-prog  { flex: 1; height: 2px; background: rgba(0,0,0,0.07); border-radius: 2px; overflow: hidden; }
 .over-fill  { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-hi)); border-radius: 2px; transition: width 0.4s ease; }
 .over-count { font-size: 12px; font-weight: 700; color: var(--gold); font-family: var(--font-display); }
 
-.balls-row {
-  padding: 8px 14px 10px; display: flex; gap: 5px;
-  border-top: 0.5px solid rgba(255,255,255,0.04); align-items: center;
-}
+.balls-row { padding: 8px 14px 10px; display: flex; gap: 5px; border-top: 0.5px solid rgba(0,0,0,0.05); align-items: center; }
 .bl-label  { font-size: 9px; color: var(--text-4); margin-right: 2px; flex-shrink: 0; }
 .ball {
   width: 25px; height: 25px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 700; flex-shrink: 0;
 }
-.b-dot { background: rgba(255,255,255,0.05); color: #333; }
+.b-dot { background: rgba(0,0,0,0.05); color: var(--text-3); }
 .b-run { background: var(--gold-dim); color: var(--gold); }
-.b-4   { background: rgba(59,130,246,0.18); color: var(--blue); }
-.b-6   { background: rgba(168,85,247,0.18); color: var(--purple); }
-.b-w   { background: rgba(248,113,113,0.18); color: var(--red); }
-.b-wd  { background: rgba(201,150,26,0.12); color: var(--text-2); }
+.b-4   { background: rgba(37,99,235,0.13); color: var(--blue); }
+.b-6   { background: rgba(124,58,237,0.13); color: var(--purple); }
+.b-w   { background: rgba(220,38,38,0.13); color: var(--red); }
+.b-wd  { background: rgba(156,122,26,0.12); color: var(--text-2); }
 
 /* ─── TARGET BAR ─────────────────────────────────────────────── */
 .target-bar {
   margin: 0 12px 12px;
-  background: rgba(201,150,26,0.05);
+  background: rgba(156,122,26,0.06);
   border: 0.5px solid var(--gold-line);
   border-radius: 10px; padding: 11px 14px;
   display: flex; align-items: center; justify-content: space-between;
@@ -173,23 +187,23 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 /* ─── STATS TABLES ───────────────────────────────────────────── */
 .stats-card {
   background: var(--bg-2); border-radius: 10px;
-  overflow: hidden; border: 0.5px solid rgba(201,150,26,0.12);
+  overflow: hidden; border: 0.5px solid rgba(156,122,26,0.18);
 }
 .stats-head {
   display: flex; padding: 7px 10px;
-  background: rgba(201,150,26,0.04);
-  border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  background: rgba(156,122,26,0.05);
+  border-bottom: 0.5px solid rgba(0,0,0,0.05);
 }
 .sh-name { flex: 1; font-size: 9px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
 .sh-stat { width: 34px; text-align: center; font-size: 9px; color: var(--text-4); }
 .stats-row {
   display: flex; align-items: center;
   padding: 8px 10px;
-  border-bottom: 0.5px solid rgba(255,255,255,0.03);
+  border-bottom: 0.5px solid rgba(0,0,0,0.04);
 }
 .stats-row:last-child { border-bottom: none; }
-.stats-row.on-strike  { background: rgba(201,150,26,0.04); }
-.stats-row.out        { opacity: 0.38; }
+.stats-row.on-strike  { background: rgba(156,122,26,0.05); }
+.stats-row.out        { opacity: 0.45; }
 .player-ava {
   width: 28px; height: 28px; border-radius: 50%;
   background: var(--gold-dim);
@@ -204,7 +218,7 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .stat-val {
   width: 34px; text-align: center;
   font-family: var(--font-display); font-size: 14px;
-  font-weight: 600; color: #888;
+  font-weight: 600; color: var(--text-2);
 }
 .stat-val.gold { color: var(--gold); }
 
@@ -212,13 +226,13 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .entry-panel {
   margin: 0 12px 12px; background: var(--bg-2);
   border-radius: var(--radius); overflow: hidden;
-  border: 0.5px solid rgba(201,150,26,0.15);
+  border: 0.5px solid rgba(156,122,26,0.2);
 }
 .entry-head {
   padding: 9px 13px; font-size: 9px; font-weight: 600;
   color: var(--text-3); letter-spacing: 0.07em;
   text-transform: uppercase;
-  border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  border-bottom: 0.5px solid rgba(0,0,0,0.05);
 }
 .run-btns   { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; padding: 10px 10px 6px; }
 .extra-btns { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; padding: 0 10px 10px; }
@@ -228,15 +242,15 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
   transition: transform 0.08s, opacity 0.08s;
 }
 .rb:active { transform: scale(0.91); }
-.rb-dot  { background: rgba(255,255,255,0.04); color: #444; }
+.rb-dot  { background: rgba(0,0,0,0.04); color: var(--text-3); }
 .rb-run  { background: var(--gold-dim); color: var(--gold); }
-.rb-4    { background: rgba(59,130,246,0.14); color: var(--blue); }
-.rb-6    { background: rgba(168,85,247,0.14); color: var(--purple); }
-.rb-w    { background: rgba(248,113,113,0.14); color: var(--red); }
-.rb-wd   { background: rgba(201,150,26,0.08); color: var(--text-2); }
-.rb-nb   { background: rgba(248,113,113,0.07); color: #FCA5A5; font-size: 11px; }
-.rb-bye  { background: rgba(201,150,26,0.07); color: var(--gold); font-size: 11px; }
-.rb-undo { background: rgba(248,113,113,0.08); color: var(--red); font-size: 11px; }
+.rb-4    { background: rgba(37,99,235,0.1); color: var(--blue); }
+.rb-6    { background: rgba(124,58,237,0.1); color: var(--purple); }
+.rb-w    { background: rgba(220,38,38,0.1); color: var(--red); }
+.rb-wd   { background: rgba(156,122,26,0.08); color: var(--text-2); }
+.rb-nb   { background: rgba(220,38,38,0.06); color: #B91C1C; font-size: 11px; }
+.rb-bye  { background: rgba(156,122,26,0.07); color: var(--gold); font-size: 11px; }
+.rb-undo { background: rgba(220,38,38,0.07); color: var(--red); font-size: 11px; }
 
 /* ─── BOTTOM NAV ─────────────────────────────────────────────── */
 .bottom-nav {
@@ -256,6 +270,7 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 
 /* ─── DASHBOARD CARDS ────────────────────────────────────────── */
 .match-card {
+  position: relative;
   background: var(--bg-2);
   border-radius: var(--radius);
   border: 0.5px solid var(--border);
@@ -265,13 +280,20 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
   transition: border-color 0.2s;
 }
 .match-card:active { border-color: var(--gold); }
-.match-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.match-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-right: 22px; }
 .match-format { font-size: 10px; color: var(--text-2); font-weight: 500; }
 .match-teams  { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
 .mt-name  { font-size: 13px; font-weight: 600; flex: 1; }
 .mt-score { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--gold); }
 .mt-vs    { font-size: 10px; color: var(--text-3); }
 .match-result { font-size: 10px; color: var(--green); margin-top: 8px; font-weight: 500; }
+.delete-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(220,38,38,0.09); color: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; z-index: 2;
+}
 
 /* ─── NEW MATCH FORM ─────────────────────────────────────────── */
 .form-group  { margin-bottom: 14px; }
@@ -291,12 +313,12 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .form-input:focus { border-color: var(--gold); }
 .form-input::placeholder { color: var(--text-4); }
 
-.overs-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.overs-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .overs-btn {
   padding: 10px; border-radius: var(--radius-sm);
   background: var(--bg-2); border: 0.5px solid var(--border);
   color: var(--text-2); font-family: var(--font-display);
-  font-size: 16px; font-weight: 600; transition: all 0.2s;
+  font-size: 15px; font-weight: 600; transition: all 0.2s;
 }
 .overs-btn.selected {
   background: var(--gold-dim); border-color: var(--gold); color: var(--gold-hi);
@@ -308,20 +330,20 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .start-btn {
   width: 100%; padding: 15px;
   background: linear-gradient(135deg, var(--gold), var(--gold-hi));
-  color: #080808; border-radius: var(--radius);
+  color: #FFFBF0; border-radius: var(--radius);
   font-family: var(--font-display);
   font-size: 18px; font-weight: 700;
   letter-spacing: 0.08em; margin-top: 20px;
-  box-shadow: 0 4px 20px rgba(201,150,26,0.3);
+  box-shadow: 0 4px 20px rgba(156,122,26,0.28);
 }
 
 /* ─── SUMMARY ────────────────────────────────────────────────── */
 .winner-card {
   margin: 12px;
-  background: linear-gradient(135deg, rgba(201,150,26,0.1), rgba(201,150,26,0.03));
+  background: linear-gradient(135deg, rgba(156,122,26,0.1), rgba(156,122,26,0.02));
   border: 0.5px solid var(--gold-line);
   border-radius: var(--radius); padding: 22px 16px; text-align: center;
-  box-shadow: 0 0 30px rgba(201,150,26,0.06);
+  box-shadow: 0 0 30px rgba(156,122,26,0.08);
 }
 .trophy { font-size: 44px; margin-bottom: 8px; }
 .winner-label { font-size: 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.1em; }
@@ -353,7 +375,7 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 /* ─── MODALS ─────────────────────────────────────────────────── */
 .modal-overlay {
   display: none; position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
+  background: rgba(20,15,5,0.55); backdrop-filter: blur(5px);
   align-items: flex-end; justify-content: center;
 }
 .modal-overlay.open { display: flex; }
@@ -373,7 +395,7 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 .modal-list  { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
 .modal-item {
   padding: 11px 12px; border-radius: var(--radius-sm);
-  background: var(--bg-3); border: 0.5px solid rgba(255,255,255,0.04);
+  background: var(--bg-3); border: 0.5px solid rgba(0,0,0,0.05);
   font-size: 13px; font-weight: 500; cursor: pointer;
   display: flex; align-items: center; gap: 10px;
   color: var(--text); transition: all 0.15s;
@@ -382,7 +404,7 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 
 /* ─── EMPTY + TOAST ──────────────────────────────────────────── */
 .empty-state { text-align: center; padding: 52px 24px; }
-.empty-icon  { font-size: 44px; margin-bottom: 12px; opacity: 0.35; }
+.empty-icon  { font-size: 44px; margin-bottom: 12px; opacity: 0.4; }
 .empty-text  { font-size: 14px; color: var(--text-3); line-height: 1.7; }
 
 .toast {
@@ -396,4 +418,4 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 
 /* ─── UTIL ───────────────────────────────────────────────────── */
 .hidden   { display: none !important; }
-.divider  { height: 0.5px; background: rgba(255,255,255,0.05); margin: 4px 0; }
+.divider  { height: 0.5px; background: rgba(0,0,0,0.07); margin: 4px 0; }
