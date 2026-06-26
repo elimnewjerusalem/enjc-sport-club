@@ -1,4 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js';
 import {
   getFirestore,
   collection,
@@ -9,22 +10,24 @@ import {
   setDoc
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
-// TODO: Replace these values with your Firebase project config
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID'
+  apiKey: 'AIzaSyCrrAx34HoSNcrKJtsMF25SiEdutUMOMgY',
+  authDomain: 'enjc-sport-club.firebaseapp.com',
+  projectId: 'enjc-sport-club',
+  storageBucket: 'enjc-sport-club.firebasestorage.app',
+  messagingSenderId: '753390842589',
+  appId: '1:753390842589:web:68682bfe3a059a25042134',
+  measurementId: 'G-XSNC62VSHZ'
 };
 
 let db;
+let analytics;
 
 function initFirebase() {
   if (db) return db;
-  initializeApp(firebaseConfig);
-  db = getFirestore();
+  const app = initializeApp(firebaseConfig);
+  analytics = getAnalytics(app);
+  db = getFirestore(app);
   return db;
 }
 

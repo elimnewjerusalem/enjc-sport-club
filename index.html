@@ -253,18 +253,10 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/app.js"></script>
+<script type="module" src="js/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
-function shareMatch() {
-  const m = state.match;
-  if (!m) return;
-  const i1 = m.inning1, i2 = m.inning2;
-  const text = `🦁 ENJC Sports Club\n⚔ ${m.team1.name} vs ${m.team2.name}\n🏏 ${m.team1.name}: ${i1?i1.runs+'/'+i1.wickets:'—'} (${i1?Math.floor(i1.balls/6)+'.'+i1.balls%6:'0'} ov)\n🏏 ${m.team2.name}: ${i2?i2.runs+'/'+i2.wickets:'—'} (${i2?Math.floor(i2.balls/6)+'.'+i2.balls%6:'0'} ov)\n🏆 ${m.result||'In Progress'}\n#ENJCSportsClub #GameOnFire`;
-  if (navigator.share) navigator.share({ title: 'ENJC Sports Club', text });
-  else navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
 }
 </script>
 </body>

@@ -173,12 +173,11 @@ function timeAgo(ts) {
 function resumeOrView(id) {
   const m = state.history.find(x => x.id === id);
   if (!m) return;
+  setMatch(m);
   if (m.status === 'done') {
-    state.match = m;
     renderSummary();
     nav('summary');
   } else {
-    state.match = m;
     renderScorecard();
     nav('score');
   }
@@ -235,7 +234,7 @@ function startMatch() {
   match.innings = 1;
 
   // open strike batter selection
-  state.match = match;
+  setMatch(match);
   openBatterSelect('strike', () => openBatterSelect('non-strike', () => openBowlerSelect(() => {
     saveMatch();
     renderScorecard();
@@ -745,6 +744,7 @@ function showToast(msg) {
 // ─── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   nav('home');
+  initMatchSync();
   renderDashboard();
 
   // nav clicks
