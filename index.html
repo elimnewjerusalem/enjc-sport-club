@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="description" content="ENJC Sport Club — Game on Fire. Live cricket scorecard app." />
+  <title>ENJC Sport Club</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP BAR
+══════════════════════════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="logo-area">
+    <div class="logo-badge">ENJC</div>
+    <div>
+      <div class="brand-name">Sport Club</div>
+      <div class="brand-sub">Game on Fire</div>
+    </div>
+  </div>
+  <div class="live-pill" id="live-pill" style="display:none">
+    <span class="live-dot"></span>Live
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: HOME (Dashboard)
+══════════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- Quick new match CTA -->
+  <div style="padding:14px 12px 0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span class="sec-label" style="margin:0">Recent Matches</span>
+      <button onclick="document.querySelector('[data-page=new]').click()"
+        style="background:var(--gold-dim);border:0.5px solid var(--gold-line);color:var(--gold);
+               border-radius:20px;padding:5px 13px;font-family:var(--font-display);
+               font-size:12px;font-weight:600;letter-spacing:0.04em;">
+        + New Match
+      </button>
+    </div>
+  </div>
+
+  <div style="padding:0 12px 16px;" id="match-list">
+    <!-- rendered by JS -->
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: NEW MATCH SETUP
+══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-new">
+  <div style="padding:14px 12px 24px;">
+
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:16px;">
+      New Match 🏏
+    </div>
+
+    <!-- Overs -->
+    <div class="form-group">
+      <label class="form-label">Format (Overs)</label>
+      <div class="overs-grid">
+        <button class="overs-btn selected" data-overs="5">5</button>
+        <button class="overs-btn" data-overs="10">10</button>
+        <button class="overs-btn" data-overs="20">20</button>
+        <button class="overs-btn" data-overs="50">50</button>
+      </div>
+    </div>
+
+    <!-- Team 1 -->
+    <div class="form-group">
+      <label class="form-label">Team 1 Name</label>
+      <input class="form-input" id="team1-name" placeholder="e.g. ENJC Warriors" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Team 1 Players</label>
+      <div class="players-list" id="team1-players">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <div class="divider" style="margin:18px 0;"></div>
+
+    <!-- Team 2 -->
+    <div class="form-group">
+      <label class="form-label">Team 2 Name</label>
+      <input class="form-input" id="team2-name" placeholder="e.g. Chennai Kings" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Team 2 Players</label>
+      <div class="players-list" id="team2-players">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="startMatch()">
+      START MATCH 🔥
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: LIVE SCORECARD
+══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-score">
+
+  <!-- Scoreboard -->
+  <div class="scoreboard">
+    <div class="score-header">
+      <span class="score-header-txt" id="sc-header-txt">—</span>
+      <span class="target-badge" id="sc-target-badge"></span>
+    </div>
+    <div class="score-main">
+      <div class="team-block">
+        <div class="team-name" id="sc-team1-name">Team 1</div>
+        <div class="score-big batting" id="sc-score1">—</div>
+        <div class="score-detail" id="sc-detail1"></div>
+      </div>
+      <div class="vs-sep">VS</div>
+      <div class="team-block">
+        <div class="team-name" id="sc-team2-name">Team 2</div>
+        <div class="score-big" id="sc-score2">—</div>
+        <div class="score-detail" id="sc-detail2"></div>
+      </div>
+    </div>
+    <div class="overs-bar">
+      <span class="over-label">Overs</span>
+      <div class="over-prog"><div class="over-fill" id="sc-over-fill" style="width:0%"></div></div>
+      <span class="over-count" id="sc-over-count">0.0 / 0</span>
+    </div>
+    <div class="balls-row">
+      <span class="bl-label">Last 6</span>
+      <div id="balls-row-inner" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+
+  <!-- Target bar (2nd innings only) -->
+  <div class="target-bar hidden" id="target-bar">
+    <div>
+      <div class="need-label">Need to win</div>
+      <div class="need-runs" id="need-runs">— runs</div>
+      <div class="need-rr" id="need-rr"></div>
+    </div>
+    <div class="crr-block">
+      <div class="crr-label">CRR</div>
+      <div class="crr-val" id="crr-val">0.0</div>
+      <div class="crr-sub">curr. rate</div>
+    </div>
+  </div>
+
+  <!-- Batting stats -->
+  <div class="section" style="padding-top:2px;">
+    <div class="sec-label">Batting</div>
+    <div class="stats-card">
+      <div class="stats-head">
+        <div class="sh-name">Player</div>
+        <div class="sh-stat">R</div>
+        <div class="sh-stat">B</div>
+        <div class="sh-stat">4s</div>
+        <div class="sh-stat">SR</div>
+      </div>
+      <div id="batter-rows"></div>
+    </div>
+  </div>
+
+  <!-- Bowling stats -->
+  <div class="section" style="padding-top:2px;">
+    <div class="sec-label">Bowling</div>
+    <div class="stats-card">
+      <div class="stats-head">
+        <div class="sh-name">Player</div>
+        <div class="sh-stat">O</div>
+        <div class="sh-stat">R</div>
+        <div class="sh-stat">W</div>
+        <div class="sh-stat">Eco</div>
+      </div>
+      <div id="bowler-rows"></div>
+    </div>
+  </div>
+
+  <!-- Score entry panel -->
+  <div class="entry-panel">
+    <div class="entry-head">Add Ball</div>
+    <div class="run-btns">
+      <button class="rb rb-dot"  onclick="addBall('dot',0)">·</button>
+      <button class="rb rb-run"  onclick="addBall('run',1)">1</button>
+      <button class="rb rb-run"  onclick="addBall('run',2)">2</button>
+      <button class="rb rb-run"  onclick="addBall('run',3)">3</button>
+      <button class="rb rb-4"    onclick="addBall('run',4)">4</button>
+      <button class="rb rb-6"    onclick="addBall('run',6)">6</button>
+      <button class="rb rb-w"    onclick="addBall('wicket',0)">W</button>
+      <button class="rb rb-wd"   onclick="addBall('wide',0)">Wd</button>
+    </div>
+    <div class="extra-btns">
+      <button class="rb rb-nb"   onclick="addBall('noball',0)">No ball</button>
+      <button class="rb rb-bye"  onclick="addBall('bye',1)">Bye</button>
+      <button class="rb rb-undo" onclick="undoLastBall()">↩ Undo</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE: MATCH SUMMARY
+══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-summary">
+
+  <div class="winner-card">
+    <div class="trophy">🏆</div>
+    <div class="winner-label">Winner</div>
+    <div class="winner-name" id="winner-name">—</div>
+    <div class="winner-sub" id="winner-sub"></div>
+  </div>
+
+  <!-- Man of the Match -->
+  <div class="mom-card">
+    <div class="mom-ava" id="mom-ava">?</div>
+    <div>
+      <div class="mom-title">⭐ Man of the Match</div>
+      <div class="mom-name" id="mom-name">—</div>
+      <div class="mom-stat" id="mom-stat"></div>
+    </div>
+  </div>
+
+  <!-- Full scorecards -->
+  <div id="summary-scorecards"></div>
+
+  <button class="share-btn" onclick="shareMatch()">
+    📤 Share Scorecard
+  </button>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     BOTTOM NAV
+══════════════════════════════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <div class="nav-item active" data-page="home">
+    <i class="ti ti-home nav-icon"></i>
+    <span>Home</span>
+  </div>
+  <div class="nav-item" data-page="new">
+    <i class="ti ti-plus nav-icon"></i>
+    <span>New</span>
+  </div>
+  <div class="nav-item" data-page="score">
+    <i class="ti ti-cricket nav-icon"></i>
+    <span>Score</span>
+  </div>
+  <div class="nav-item" data-page="summary">
+    <i class="ti ti-trophy nav-icon"></i>
+    <span>Result</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Player/Bowler select modal -->
+<div class="modal-overlay" id="select-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">
+      Select Player
+      <span class="modal-close" onclick="closeModal()">✕</span>
+    </div>
+    <div class="modal-list" id="modal-list"></div>
+  </div>
+</div>
+
+<!-- Wicket type modal -->
+<div class="modal-overlay" id="wicket-modal">
+  <div class="modal">
+    <div class="modal-title">
+      How was he out?
+      <span class="modal-close" onclick="closeModal()">✕</span>
+    </div>
+    <div class="modal-list" id="dismissal-list"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+<script>
+function shareMatch() {
+  const m = state.match;
+  if (!m) return;
+  const i1 = m.inning1, i2 = m.inning2;
+  const text = `🔥 ENJC Sport Club\n${m.team1.name}: ${i1?i1.runs+'/'+i1.wickets:'—'}\n${m.team2.name}: ${i2?i2.runs+'/'+i2.wickets:'—'}\n${m.result||'In Progress'}\n#ENJCSportClub #GameOnFire`;
+  if (navigator.share) {
+    navigator.share({ title: 'ENJC Sport Club', text });
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+  }
+}
+</script>
+</body>
+</html>
