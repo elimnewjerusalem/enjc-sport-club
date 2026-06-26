@@ -1,10 +1,10 @@
-const CACHE = 'enjc-sport-v1';
+const CACHE = 'enjc-sport-v2';
 const SHELL = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', e => {
