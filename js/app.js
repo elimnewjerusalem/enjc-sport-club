@@ -3,11 +3,56 @@
    Cricket Scoring Engine
 ═══════════════════════════════════════════════════════════════ */
 
+import { subscribeToMatchHistory, subscribeToMatch, saveMatch as saveMatchToFirestore } from './firebase.js';
+
 // ─── STATE ────────────────────────────────────────────────────
 let state = {
   match: null,
-  history: JSON.parse(localStorage.getItem('enjc_matches') || '[]')
+  history: []
 };
+
+let historyUnsub = null;
+let matchUnsub = null;
+
+function setMatch(match) {
+  if (match && state.match?.id === match.id) {
+    state.match = match;
+    return;
+  }
+
+  state.match = match;
+  if (matchUnsub) matchUnsub();
+
+  if (match) {
+    matchUnsub = subscribeToMatch(match.id, remoteMatch => {
+      if (!remoteMatch) return;
+      state.match = remoteMatch;
+
+      const idx = state.history.findIndex(m => m.id === remoteMatch.id);
+      if (idx >= 0) state.history[idx] = remoteMatch;
+
+      if (document.getElementById('page-score').classList.contains('active')) renderScorecard();
+      if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
+    }, error => console.error('Match subscription error', error));
+  }
+}
+
+function initMatchSync() {
+  if (historyUnsub) historyUnsub();
+  historyUnsub = subscribeToMatchHistory(matches => {
+    state.history = matches;
+    renderDashboard();
+
+    if (state.match?.id) {
+      const openMatch = matches.find(m => m.id === state.match.id);
+      if (openMatch) {
+        state.match = openMatch;
+        if (document.getElementById('page-score').classList.contains('active')) renderScorecard();
+        if (document.getElementById('page-summary').classList.contains('active')) renderSummary();
+      }
+    }
+  }, error => console.error('History subscription error', error));
+}
 
 const defaultMatch = () => ({
   id: Date.now(),
@@ -648,13 +693,19 @@ function renderSummary() {
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────
-function saveMatch() {
+async function saveMatch() {
   const match = state.match;
   if (!match) return;
   const idx = state.history.findIndex(m => m.id === match.id);
   if (idx >= 0) state.history[idx] = match;
   else state.history.push(match);
-  localStorage.setItem('enjc_matches', JSON.stringify(state.history));
+
+  try {
+    await saveMatchToFirestore(match);
+  } catch (err) {
+    console.error('Failed to save match to Firestore', err);
+    showToast('Unable to save match. Check your connection.');
+  }
 }
 
 // ─── UTILS ────────────────────────────────────────────────────
@@ -662,6 +713,29 @@ function initials(name) {
   if (!name) return '?';
   return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
 }
+function shareMatch() {
+  const m = state.match;
+  if (!m) return;
+  const i1 = m.inning1, i2 = m.inning2;
+  const text = `🦁 ENJC Sports Club\n⚔ ${m.team1.name} vs ${m.team2.name}\n🏏 ${m.team1.name}: ${i1?i1.runs+'/'+i1.wickets:'—'} (${i1?Math.floor(i1.balls/6)+'.'+i1.balls%6:'0'} ov)\n🏏 ${m.team2.name}: ${i2?i2.runs+'/'+i2.wickets:'—'} (${i2?Math.floor(i2.balls/6)+'.'+i2.balls%6:'0'} ov)\n🏆 ${m.result||'In Progress'}\n#ENJCSportsClub #GameOnFire`;
+  if (navigator.share) navigator.share({ title: 'ENJC Sports Club', text });
+  else navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+}
+
+const appApi = {
+  nav,
+  startMatch,
+  openBatterSelect,
+  openBowlerSelect,
+  selectModalItem,
+  recordWicket,
+  undoLastBall,
+  resumeOrView,
+  closeModal,
+  shareMatch
+};
+Object.assign(window, appApi);
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
