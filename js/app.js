@@ -5,22 +5,53 @@
         1-year localStorage backup, tournament page nav
 ═══════════════════════════════════════════════════════════════ */
 
-import { subscribeToMatchHistory, subscribeToMatch, saveMatch as saveMatchToFirestore } from './firebase.js';
+import { subscribeToMatchHistory, subscribeToMatch, saveMatch as saveMatchToFirestore, deleteMatch as deleteMatchFromFirestore, batchDeleteMatches } from './firebase.js';
 
 // ─── STATE ────────────────────────────────────────────────────
 let state = {
   match: null,
   history: JSON.parse(localStorage.getItem('enjc_matches') || '[]')
 };
-let historyUnsub = null;
-let matchUnsub   = null;
+let historyUnsub  = null;
+let matchUnsub    = null;
 let pendingDelete = null;
+let isScorer      = false; // true = the person scoring, false = viewer
+
+// Deep link: ?watch=MATCHID opens scorecard in viewer mode
+function checkDeepLink() {
+  const params  = new URLSearchParams(location.search);
+  const watchId = params.get('watch');
+  if (!watchId) return;
+  isScorer = false;
+  document.getElementById('sync-banner').classList.remove('hidden');
+  document.getElementById('page-score').classList.add('viewer-mode');
+  // Subscribe directly to that match
+  subscribeToMatch(Number(watchId), remote => {
+    if (!remote) { showToast('Match not found'); return; }
+    state.match = remote;
+    renderScorecard();
+    nav('score');
+  }, e => console.error(e));
+}
 
 // ─── FIREBASE SYNC ────────────────────────────────────────────
-function setMatch(match) {
+function setMatch(match, scorer = true) {
   state.match = match;
+  isScorer    = scorer;
   if (matchUnsub) matchUnsub();
   if (!match) return;
+
+  // Show/hide viewer banner and scorer entry panel
+  const banner = document.getElementById('sync-banner');
+  const scorePage = document.getElementById('page-score');
+  if (scorer) {
+    banner.classList.add('hidden');
+    scorePage.classList.remove('viewer-mode');
+  } else {
+    banner.classList.remove('hidden');
+    scorePage.classList.add('viewer-mode');
+  }
+
   matchUnsub = subscribeToMatch(match.id, remote => {
     if (!remote) return;
     state.match = remote;
@@ -55,10 +86,16 @@ function activePage() {
 }
 
 // ─── 1-YEAR BACKUP PRUNE ─────────────────────────────────────
-function pruneOldMatches() {
+async function pruneOldMatches() {
   const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const old    = state.history.filter(m => m.id < cutoff).map(m => m.id);
   state.history = state.history.filter(m => m.id >= cutoff);
   localStorage.setItem('enjc_matches', JSON.stringify(state.history));
+  // Also remove from Firestore so other users' dashboards stay clean
+  if (old.length) {
+    try { await batchDeleteMatches(old); }
+    catch(e) { console.warn('Prune Firestore failed (offline?)', e.message); }
+  }
 }
 
 // ─── MATCH DEFAULTS ───────────────────────────────────────────
@@ -543,9 +580,8 @@ function confirmDelete() {
   state.history = state.history.filter(m => m.id !== pendingDelete);
   localStorage.setItem('enjc_matches', JSON.stringify(state.history));
   // fire-and-forget Firestore delete (best effort)
-  try {
-    import('./firebase.js').then(fb => fb.deleteMatch && fb.deleteMatch(pendingDelete));
-  } catch(e){}
+  try { await deleteMatchFromFirestore(pendingDelete); }
+  catch(e) { console.warn('Firestore delete failed (offline?), removed locally'); }
   pendingDelete = null;
   state.match = null;
   showToast('Match deleted');
@@ -557,9 +593,24 @@ function confirmDelete() {
 function shareMatch() {
   const m=state.match; if(!m) return;
   const i1=m.inning1, i2=m.inning2;
-  const text=`🦁 ENJC Sports Club\n⚔ ${m.team1.name} vs ${m.team2.name}\n🏏 ${m.team1.name}: ${i1?i1.runs+'/'+i1.wickets:'—'} (${i1?oversStr(i1.balls):'0'} ov)\n🏏 ${m.team2.name}: ${i2?i2.runs+'/'+i2.wickets:'—'} (${i2?oversStr(i2.balls):'0'} ov)\n🏆 ${m.result||'In Progress'}\n#ENJCSportsClub #GameOnFire`;
-  if(navigator.share) navigator.share({title:'ENJC Sports Club',text});
-  else navigator.clipboard.writeText(text).then(()=>showToast('Copied!'));
+  const base = location.origin + location.pathname;
+  const watchUrl = m.status === 'live' ? `${base}?watch=${m.id}` : '';
+  const text = `🦁 ENJC Sports Club
+⚔ ${m.team1.name} vs ${m.team2.name}
+🏏 ${m.team1.name}: ${i1?i1.runs+'/'+i1.wickets:'—'} (${i1?oversStr(i1.balls):'0'} ov)
+🏏 ${m.team2.name}: ${i2?i2.runs+'/'+i2.wickets:'—'} (${i2?oversStr(i2.balls):'0'} ov)
+🏆 ${m.result||'In Progress'}${watchUrl ? '\n📲 Watch live: '+watchUrl : ''}
+#ENJCSportsClub #GameOnFire`;
+  if(navigator.share) navigator.share({title:'ENJC Sports Club',text,url:watchUrl||base});
+  else navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard!'));
+}
+
+// Share just the live watch link (for WhatsApp quick share)
+function shareLiveLink() {
+  const m = state.match; if(!m||m.status!=='live') { showToast('No live match'); return; }
+  const url = `${location.origin}${location.pathname}?watch=${m.id}`;
+  if(navigator.share) navigator.share({title:'Watch live 🔴 '+m.team1.name+' vs '+m.team2.name, url});
+  else navigator.clipboard.writeText(url).then(()=>showToast('Live link copied!'));
 }
 
 // ─── SAVE ─────────────────────────────────────────────────────
@@ -574,7 +625,7 @@ async function saveMatch() {
 
 // ─── EXPOSE TO window (ES module fix) ─────────────────────────
 Object.assign(window, {
-  nav, gotoNewMatch, gotoTournament, resumeOrView,
+  nav, gotoNewMatch, gotoTournament, resumeOrView, shareLiveLink,
   startMatch, addBall, selectModalItem, closeModal,
   recordWicket, undoLastBall, shareMatch, exportMatch,
   deleteCurrentMatch, confirmDelete
@@ -583,6 +634,7 @@ Object.assign(window, {
 // ─── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   pruneOldMatches();
+  checkDeepLink();
   nav('home');
   initMatchSync();
   renderDashboard();

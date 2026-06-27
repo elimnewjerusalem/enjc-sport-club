@@ -483,3 +483,23 @@ button:active { transform: scale(0.96); transition: transform 0.08s; }
 
 /* ═══ EXPORT / DELETE BUTTONS ════════════════════════════════ */
 .action-row { display: flex; gap: 8px; padding: 0 12px 12px; }
+
+/* ═══ LIVE SYNC BANNER ══════════════════════════════════════ */
+.sync-banner {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(74,222,128,0.08);
+  border-bottom: 0.5px solid rgba(74,222,128,0.2);
+  padding: 7px 16px;
+  font-size: 11px; font-weight: 500; color: var(--green);
+}
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); flex-shrink: 0;
+  animation: pulse 1.4s infinite;
+}
+
+/* ═══ VIEWER MODE (no entry panel) ════════════════════════ */
+.viewer-mode .entry-panel { display: none !important; }
+
+/* hide scorer-only UI from viewers */
+.viewer-mode #share-live-row { display: none !important; }
