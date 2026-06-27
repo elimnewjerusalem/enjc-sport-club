@@ -1,9 +1,10 @@
-const CACHE = 'enjc-sport-v2';
+const CACHE = 'enjc-sport-v3';
 const SHELL = [
   './',
   './index.html',
   './css/style.css',
   './js/app.js',
+  './js/firebase.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'

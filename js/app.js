@@ -1,6 +1,16 @@
 /* ═══════════════════════════════════════════════════════════════
-   ENJC Sport Club v6
-   Bugs fixed:
+   ENJC Sport Club v7
+   Bugs fixed (v6 → v7):
+   1. Match Plan PDF dropped typed team names — exportRosterPDF's
+      getBlock() had a ternary/|| operator-precedence bug, so the
+      PDF always printed literal "Team 1"/"Team 2" instead of the
+      name typed in; Team 2 could even show "Team 1" wrongly.
+   2. recordWicket() only checked all-out, never overs-completed
+      or target-chased — so a wicket on the last ball of the last
+      over (without being all-out) wrongly kept the innings going
+      instead of ending it. Now uses isInningsOver() consistently.
+
+   Bugs fixed (earlier, v6):
    1. Team 1 only 1 ball then jumps to team 2 — checkInningsEnd
       called BEFORE addBall completes its own over logic
    2. Recent matches not showing — initSync overwrites history
@@ -277,7 +287,7 @@ function exportRosterPDF() {
   const fmtD = dateVal ? new Date(dateVal).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : fmtDate(Date.now());
 
   function getBlock(blockId) {
-    const name = $(`plan-content`).querySelector(`[data-block="${blockId}"]`)?.value.trim() || blockId==='plan-team1'?'Team 1':'Team 2';
+    const name = $(`plan-content`).querySelector(`[data-block="${blockId}"]`)?.value.trim() || (blockId==='plan-team1'?'Team 1':'Team 2');
     const rows = [...$(`${blockId}-rows`).querySelectorAll('.roster-row')];
     return {
       name,
@@ -691,9 +701,10 @@ function recordWicket(dismissal) {
   const bowler=inn.bowlers.find(b=>b.idx===inn.currentBowler);
   if(bowler&&dismissal!=='Run Out') bowler.wickets++;
 
-  // check all-out
-  const total=S.match[inn.battingTeam].players.length;
-  if(inn.wickets>=Math.min(total-1,10)) { doInningsEnd(); return; }
+  // BUG2 FIX: check all-out OR overs-completed OR target-chased — not just all-out,
+  // otherwise a wicket on the last ball of the last over (without being all-out)
+  // wrongly kept the innings going instead of ending it.
+  if(isInningsOver()) { doInningsEnd(); return; }
 
   if(inn.overBalls===6) {
     inn.overBalls=0; if(bowler) bowler.overs++;
