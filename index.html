@@ -12,7 +12,6 @@
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar" id="main-topbar">
   <div class="logo-area">
     <svg class="logo-shield" viewBox="0 0 80 80" fill="none">
@@ -21,7 +20,7 @@
       <ellipse cx="40" cy="35" rx="10" ry="9" fill="#FFF8E8" stroke="#C9961A" stroke-width="1"/>
       <path d="M30 34C28 30 29 26 33 25M50 34C52 30 51 26 47 25M31 38C27 38 25 42 28 44M49 38C53 38 55 42 52 44" stroke="#C9961A" stroke-width="1.2" stroke-linecap="round"/>
       <circle cx="37" cy="33" r="1.2" fill="#C9961A"/><circle cx="43" cy="33" r="1.2" fill="#C9961A"/>
-      <path d="M37 38 Q40 40 43 38" stroke="#C9961A" stroke-width="1" stroke-linecap="round"/>
+      <path d="M37 38Q40 40 43 38" stroke="#C9961A" stroke-width="1" stroke-linecap="round"/>
       <path d="M20 55C18 52 19 48 22 47M20 55C21 58 24 59 26 57M60 55C62 52 61 48 58 47M60 55C59 58 56 59 54 57" stroke="#C9961A" stroke-width="1.2" stroke-linecap="round"/>
       <text x="40" y="62" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="11" font-weight="700" fill="#C9961A" letter-spacing="1">ENJC</text>
       <path d="M40 68L40.6 69.8H42.5L41 70.9L41.6 72.7L40 71.6L38.4 72.7L39 70.9L37.5 69.8H39.4Z" fill="#C9961A"/>
@@ -36,9 +35,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE: HOME
-══════════════════════════════════════════════════════════════ -->
+<!-- HOME -->
 <div class="page active" id="page-home">
   <div class="home-hero">
     <div class="home-title">Choose Your Game</div>
@@ -55,10 +52,10 @@
       <div class="sport-name">Football</div>
       <div class="sport-tag">Live Scoring</div>
     </div>
-    <div class="sport-card sport-soon" onclick="nav('tournament')">
-      <div class="sport-icon">🏆</div>
-      <div class="sport-name">Tournament</div>
-      <div class="sport-tag">Upcoming</div>
+    <div class="sport-card sport-active" onclick="gotoMatchPlan()">
+      <div class="sport-icon">📋</div>
+      <div class="sport-name">Match Plan</div>
+      <div class="sport-tag">Team Roster · PDF</div>
     </div>
     <div class="sport-card sport-coming">
       <div class="sport-icon">🏐</div>
@@ -72,28 +69,17 @@
   <div style="padding:0 12px 16px" id="match-list"></div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE: TOURNAMENT
-══════════════════════════════════════════════════════════════ -->
-<div class="page" id="page-tournament">
-  <div style="padding:20px 16px">
-    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">🏆 Tournaments</div>
-    <div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No tournaments announced yet.<br>Check back soon!</div></div>
-  </div>
+<!-- MATCH PLAN (Roster) -->
+<div class="page" id="page-plan">
+  <div style="padding:14px 12px 28px" id="plan-content"></div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE: MATCH PLANNING (pre-match setup)
-══════════════════════════════════════════════════════════════ -->
+<!-- NEW MATCH SETUP -->
 <div class="page" id="page-new">
-  <div style="padding:14px 12px 28px" id="setup-content">
-    <!-- rendered by JS based on sport -->
-  </div>
+  <div style="padding:14px 12px 28px" id="setup-content"></div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE: LIVE CRICKET SCORECARD
-══════════════════════════════════════════════════════════════ -->
+<!-- CRICKET LIVE SCORE -->
 <div class="page" id="page-score">
   <div id="sync-banner" class="sync-banner hidden">
     <span class="sync-dot"></span>Watching live · updates automatically
@@ -177,15 +163,13 @@
     </div>
   </div>
   <div style="padding:0 12px 12px" id="share-live-row">
-    <button onclick="shareLiveLink()" class="share-btn" style="width:100%;color:var(--green);border-color:rgba(74,222,128,0.25)">
-      📲 Share Live Link
+    <button onclick="shareLiveLink()" class="share-btn" style="width:100%;color:var(--green);border-color:rgba(21,128,61,0.3)">
+      📲 Share Live Link — Friends watch on phone
     </button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE: FOOTBALL LIVE SCORE
-══════════════════════════════════════════════════════════════ -->
+<!-- FOOTBALL LIVE SCORE -->
 <div class="page" id="page-football">
   <div class="scoreboard">
     <div class="score-header">
@@ -203,23 +187,18 @@
         <div class="score-big" id="fb-score2">0</div>
       </div>
     </div>
-    <!-- match clock -->
     <div class="overs-bar">
       <span class="over-label">Time</span>
       <div class="over-prog"><div class="over-fill" id="fb-time-fill" style="width:0%"></div></div>
       <span class="over-count" id="fb-time-display">0'</span>
     </div>
   </div>
-
-  <!-- Events log -->
   <div class="section" style="padding-top:2px">
     <div class="sec-label">Match Events</div>
     <div class="stats-card" id="fb-events" style="min-height:60px;padding:8px 10px">
       <div style="color:var(--text-3);font-size:12px">No events yet</div>
     </div>
   </div>
-
-  <!-- Football entry panel -->
   <div class="entry-panel" id="football-entry">
     <div class="entry-head">Team 1 — <span id="fb-t1-label">Team 1</span></div>
     <div class="run-btns" style="grid-template-columns:repeat(3,1fr)">
@@ -227,7 +206,7 @@
       <button class="rb rb-w"  onclick="fbEvent('yellow',1)">🟨 Yellow</button>
       <button class="rb rb-wd" onclick="fbEvent('red',1)">🟥 Red</button>
     </div>
-    <div class="entry-head" style="margin-top:4px">Team 2 — <span id="fb-t2-label">Team 2</span></div>
+    <div class="entry-head" style="margin-top:2px">Team 2 — <span id="fb-t2-label">Team 2</span></div>
     <div class="run-btns" style="grid-template-columns:repeat(3,1fr)">
       <button class="rb rb-6"  onclick="fbEvent('goal',2)">⚽ Goal</button>
       <button class="rb rb-w"  onclick="fbEvent('yellow',2)">🟨 Yellow</button>
@@ -240,15 +219,13 @@
     </div>
   </div>
   <div style="padding:0 12px 12px">
-    <button onclick="shareLiveLink()" class="share-btn" style="width:100%;color:var(--green);border-color:rgba(74,222,128,0.25)">
+    <button onclick="shareLiveLink()" class="share-btn" style="width:100%;color:var(--green);border-color:rgba(21,128,61,0.3)">
       📲 Share Live Link
     </button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE: MATCH SUMMARY
-══════════════════════════════════════════════════════════════ -->
+<!-- SUMMARY -->
 <div class="page" id="page-summary">
   <div class="winner-card">
     <div class="trophy">🏆</div>
@@ -265,7 +242,7 @@
     </div>
   </div>
   <div id="summary-scorecards"></div>
-  <div style="display:flex;gap:8px;padding:0 12px 8px;flex-wrap:wrap">
+  <div style="display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap">
     <button class="share-btn" style="flex:1;min-width:80px" onclick="shareMatch()">📤 Share</button>
     <button class="share-btn" style="flex:1;min-width:80px;color:var(--blue)" onclick="exportPDF()">📄 PDF</button>
     <button class="share-btn" style="flex:1;min-width:80px;color:var(--red)" onclick="deleteCurrentMatch()">🗑 Delete</button>
@@ -275,6 +252,7 @@
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <div class="nav-item active" data-page="home"><i class="ti ti-home nav-icon"></i><span>Home</span></div>
+  <div class="nav-item" data-page="plan"><i class="ti ti-clipboard-list nav-icon"></i><span>Plan</span></div>
   <div class="nav-item" data-page="score"><i class="ti ti-cricket nav-icon"></i><span>Cricket</span></div>
   <div class="nav-item" data-page="football"><i class="ti ti-ball-football nav-icon"></i><span>Football</span></div>
   <div class="nav-item" data-page="summary"><i class="ti ti-trophy nav-icon"></i><span>Result</span></div>
@@ -299,15 +277,14 @@
     <div style="font-size:13px;color:var(--text-2);margin-bottom:16px">This cannot be undone.</div>
     <div style="display:flex;gap:8px">
       <button onclick="closeModal()" style="flex:1;padding:11px;border-radius:8px;background:var(--bg-3);color:var(--text-2);font-family:var(--font-display);font-size:14px;font-weight:600;border:none">Cancel</button>
-      <button onclick="confirmDelete()" style="flex:1;padding:11px;border-radius:8px;background:rgba(220,38,38,0.1);color:var(--red);border:0.5px solid rgba(220,38,38,0.2);font-family:var(--font-display);font-size:14px;font-weight:600">Delete</button>
+      <button onclick="confirmDelete()" style="flex:1;padding:11px;border-radius:8px;background:rgba(220,38,38,0.1);color:var(--red);border:1px solid rgba(220,38,38,0.2);font-family:var(--font-display);font-size:14px;font-weight:600">Delete</button>
     </div>
   </div>
 </div>
 
-<!-- PDF PRINT AREA (hidden, shown only during print) -->
 <div id="pdf-area" class="pdf-area hidden"></div>
-
 <div class="toast" id="toast"></div>
+
 <script type="module" src="js/app.js"></script>
 <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});</script>
 </body>

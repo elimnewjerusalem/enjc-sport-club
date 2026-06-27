@@ -217,3 +217,8 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
   .pdf-mom{margin-top:12px;background:#FFF8E8;border-left:3px solid #C9961A;padding:8px 12px;font-size:12px;font-weight:600;color:#A67010;}
   .pdf-footer{margin-top:20px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px;}
 }
+
+/* roster row for match plan page */
+.roster-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
