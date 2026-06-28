@@ -120,7 +120,7 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
 .score-main{padding:14px;display:flex;align-items:center;}
 .team-block{flex:1;text-align:center;}
 .team-name{font-size:10px;color:var(--text-2);margin-bottom:5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;}
-.score-big{font-family:var(--font-display);font-size:50px;font-weight:700;color:var(--text);line-height:1;}
+.score-big{font-family:var(--font-display);font-size:50px;font-weight:700;color:var(--text);line-height:1;border-radius:10px;display:inline-block;padding:2px 10px;}
 .score-big.batting{color:var(--gold-hi);}
 .score-detail{font-size:11px;color:var(--text-3);margin-top:3px;}
 .vs-sep{width:36px;text-align:center;color:var(--text-4);font-size:11px;font-weight:600;flex-shrink:0;font-family:var(--font-display);}
@@ -130,6 +130,9 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
 .over-fill{height:100%;background:linear-gradient(90deg,var(--gold),#E8B84B);border-radius:2px;transition:width 0.4s ease;}
 .over-count{font-size:12px;font-weight:700;color:var(--gold-hi);font-family:var(--font-display);}
 .balls-row{padding:8px 14px 10px;display:flex;gap:5px;border-top:1px solid var(--gold-line);align-items:center;}
+.partnership-row{padding:7px 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--gold-line);background:rgba(201,150,26,0.04);}
+.pr-label{font-size:10px;color:var(--text-3);font-weight:600;}
+.pr-val{font-size:12px;color:var(--gold-hi);font-weight:700;font-family:var(--font-display);}
 .bl-label{font-size:9px;color:var(--text-4);margin-right:2px;flex-shrink:0;}
 .ball{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
 .b-dot{background:var(--bg-3);color:var(--text-4);}
@@ -167,7 +170,7 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
 .stat-val.gold{color:var(--gold-hi);}
 
 /* ─── ENTRY PANEL ────────────────────────────────────────── */
-.entry-panel{margin:0 12px 12px;background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
+.entry-panel{position:sticky;bottom:68px;z-index:30;margin:0 12px 12px;background:var(--bg);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);}
 .entry-head{padding:9px 13px;font-size:9px;font-weight:600;color:var(--text-3);letter-spacing:0.07em;text-transform:uppercase;border-bottom:1px solid var(--border);}
 .run-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 10px 6px;}
 .extra-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 10px 10px;}

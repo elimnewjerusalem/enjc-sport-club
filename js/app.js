@@ -708,7 +708,8 @@ function mkInning(bt,bwt,ov) {
     runs:0, wickets:0, balls:0,
     extras:{wide:0,noBall:0,bye:0},
     batters:[], bowlers:[], lastSix:[], allBalls:[],
-    onStrike:null, nonStrike:null, currentBowler:null, overBalls:0
+    onStrike:null, nonStrike:null, currentBowler:null, overBalls:0,
+    partnershipStart:{runs:0,balls:0}
   };
 }
 
@@ -760,6 +761,15 @@ function closeModal() {
 }
 
 // ─── CRICKET SCORING ─────────────────────────────────────────
+function animateBallEffect(type,runs,innings) {
+  const el = innings===1 ? $('sc-score1') : $('sc-score2');
+  if(!el) return;
+  el.classList.remove('flash-gold','shake');
+  void el.offsetWidth; // force reflow so the animation restarts every time
+  if(type==='wicket') el.classList.add('shake');
+  else if(type==='run'&&(runs===4||runs===6)) el.classList.add('flash-gold');
+}
+
 function addBall(type,runs) {
   const match=S.match; if(!match||match.status!=='live') return;
   const inn=match.current; if(!inn) return;
@@ -790,6 +800,7 @@ function addBall(type,runs) {
 
   inn.allBalls.push({type,runs});
   inn.lastSix=inn.allBalls.slice(-6);
+  animateBallEffect(type,runs,match.innings);
 
   // wicket — open modal, return; ball already counted above
   if(isWicket) { openWicketModal(); return; }
@@ -896,9 +907,15 @@ function recordWicket(dismissal) {
   if(inn.overBalls===6) {
     inn.overBalls=0; if(bowler) bowler.overs++;
     [inn.onStrike,inn.nonStrike]=[inn.nonStrike,inn.onStrike];
-    openBatterSelect('strike',()=>openBowlerSelect(()=>{ saveMatch(); renderCricket(); }));
+    openBatterSelect('strike',()=>openBowlerSelect(()=>{
+      inn.partnershipStart={runs:inn.runs,balls:inn.balls};
+      saveMatch(); renderCricket();
+    }));
   } else {
-    openBatterSelect('strike',()=>{ saveMatch(); renderCricket(); });
+    openBatterSelect('strike',()=>{
+      inn.partnershipStart={runs:inn.runs,balls:inn.balls};
+      saveMatch(); renderCricket();
+    });
   }
 }
 
@@ -973,6 +990,14 @@ function renderCricket() {
     return `<div class="ball ${cls}">${lbl}</div>`;
   }).join('')||'<span style="font-size:10px;color:var(--text-3)">No balls yet</span>';
 
+  const ps=inn.partnershipStart||{runs:0,balls:0};
+  const prRuns=inn.runs-ps.runs, prBalls=inn.balls-ps.balls;
+  const prRow=$('partnership-row');
+  if(inn.batters.filter(b=>!b.out).length>=2 && (prBalls>0||prRuns>0)) {
+    prRow.classList.remove('hidden');
+    $('pr-val').textContent=`${prRuns} runs (${prBalls} balls)`;
+  } else prRow.classList.add('hidden');
+
   const tb=$('target-bar');
   if(innings===2&&tgt){
     tb.classList.remove('hidden');
@@ -1025,6 +1050,10 @@ function fbEvent(type,team) {
       m.events.push({type,team,player:name,minute:m.minute||0});
       if(type==='goal') team===1?m.goals1++:m.goals2++;
       saveMatch(); renderFootball();
+      if(type==='goal') {
+        const el=team===1?$('fb-score1'):$('fb-score2');
+        el?.classList.remove('flash-gold'); void el?.offsetWidth; el?.classList.add('flash-gold');
+      }
     }
   );
 }
@@ -1066,8 +1095,8 @@ function renderFootball() {
   $('fb-time-display').textContent=`${min}'`;
   $('fb-time-fill').style.width=Math.min(100,(min/90)*100)+'%';
   const events=m.events||[];
-  $('fb-events').innerHTML=events.length?events.slice().reverse().map(e=>`
-    <div class="stats-row" style="padding:6px 0">
+  $('fb-events').innerHTML=events.length?events.slice().reverse().map((e,i)=>`
+    <div class="stats-row ${i===0?'pop-in':''}" style="padding:6px 0">
       <div style="width:30px;text-align:center;font-size:16px">${e.type==='goal'?'⚽':e.type==='yellow'?'🟨':'🟥'}</div>
       <div style="flex:1"><div class="player-name">${e.player}</div><div class="player-sub">${e.team===1?m.team1.name:m.team2.name}</div></div>
       <div style="font-size:11px;color:var(--text-3)">${e.minute}'</div>
