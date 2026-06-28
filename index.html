@@ -26,8 +26,9 @@
       <path d="M40 68L40.6 69.8H42.5L41 70.9L41.6 72.7L40 71.6L38.4 72.7L39 70.9L37.5 69.8H39.4Z" fill="#C9961A"/>
     </svg>
     <div>
+      <div class="brand-name-main">ENJC</div>
       <div class="brand-name">Sports Club</div>
-      <div class="brand-sub">Game on Fire</div>
+      <div class="brand-sub">Game On Fire</div>
     </div>
   </div>
   <div class="live-pill" id="live-pill" style="display:none">
@@ -41,39 +42,41 @@
     <div class="home-title">Choose Your Game</div>
     <div class="home-sub">Select a sport to start scoring</div>
   </div>
+  <div class="stat-row" id="home-stats"></div>
+  <div id="home-live-slot"></div>
   <div class="sport-grid">
     <div class="sport-card sport-active" onclick="gotoNewMatch('cricket')">
-      <div class="sport-icon">🏏</div>
+      <div class="sport-icon-circle"><i class="ti ti-cricket"></i></div>
       <div class="sport-name">Cricket</div>
       <div class="sport-tag">Live Scoring</div>
     </div>
     <div class="sport-card sport-active" onclick="gotoNewMatch('football')">
-      <div class="sport-icon">⚽</div>
+      <div class="sport-icon-circle"><i class="ti ti-ball-football"></i></div>
       <div class="sport-name">Football</div>
       <div class="sport-tag">Live Scoring</div>
     </div>
     <div class="sport-card sport-active" onclick="gotoMatchPlan()">
-      <div class="sport-icon">📋</div>
+      <div class="sport-icon-circle"><i class="ti ti-clipboard-list"></i></div>
       <div class="sport-name">Match Plan</div>
       <div class="sport-tag">Team Roster · PDF</div>
     </div>
     <div class="sport-card sport-active" onclick="gotoTeamsMgr()">
-      <div class="sport-icon">🗂️</div>
+      <div class="sport-icon-circle"><i class="ti ti-users-group"></i></div>
       <div class="sport-name">Saved Teams</div>
       <div class="sport-tag">Reuse Rosters</div>
     </div>
     <div class="sport-card sport-active" onclick="gotoStats()">
-      <div class="sport-icon">📊</div>
+      <div class="sport-icon-circle"><i class="ti ti-chart-bar"></i></div>
       <div class="sport-name">Player Stats</div>
       <div class="sport-tag">Career Numbers</div>
     </div>
     <div class="sport-card sport-active" onclick="gotoTournaments()">
-      <div class="sport-icon">🏆</div>
+      <div class="sport-icon-circle"><i class="ti ti-trophy"></i></div>
       <div class="sport-name">Tournaments</div>
       <div class="sport-tag">Points Table</div>
     </div>
     <div class="sport-card sport-coming">
-      <div class="sport-icon">🏐</div>
+      <div class="sport-icon-circle"><i class="ti ti-ball-volleyball"></i></div>
       <div class="sport-name">Volleyball</div>
       <div class="sport-tag coming-tag">Coming Soon</div>
     </div>

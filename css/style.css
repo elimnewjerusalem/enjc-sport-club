@@ -1,28 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
 
 /* ─── TOKENS ──────────────────────────────────────────────── */
 :root {
   --bg:       #FFFFFF;
-  --bg-2:     #F9F5EC;
-  --bg-3:     #F0E8D4;
+  --bg-2:     #FAF7EF;
+  --bg-3:     #F2EBD8;
   --gold:     #C9961A;
   --gold-hi:  #A67010;
   --gold-dim: rgba(201,150,26,0.12);
   --gold-line:rgba(201,150,26,0.25);
   --gold-glow:rgba(201,150,26,0.08);
-  --text:     #1A1200;
-  --text-2:   #5C4A10;
-  --text-3:   #8B7040;
-  --text-4:   #B8A070;
+  --text:     #183153;
+  --text-2:   #3C5170;
+  --text-3:   #6B7D94;
+  --text-4:   #A4B0BF;
   --border:   rgba(201,150,26,0.22);
   --blue:     #1D4ED8;
   --purple:   #6D28D9;
-  --green:    #15803D;
+  --green:    #0E9F6E;
   --red:      #DC2626;
+  --amber:    #F59E0B;
+  --shadow-sm:0 2px 10px rgba(24,49,83,0.05);
+  --shadow:   0 6px 24px rgba(24,49,83,0.08);
   --font-display:'Rajdhani',sans-serif;
   --font-body:   'Inter',sans-serif;
-  --radius:   12px;
-  --radius-sm:8px;
+  --font-accent: 'Outfit',sans-serif;
+  --radius:   18px;
+  --radius-sm:12px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;-webkit-tap-highlight-color:transparent;}
@@ -30,14 +34,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-hei
 a{text-decoration:none;color:inherit;}
 button{cursor:pointer;border:none;outline:none;font-family:var(--font-display);}
 button:active{transform:scale(0.95);transition:transform 0.08s;}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px;}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes flashGold{0%{background:rgba(201,150,26,0.35)}100%{background:transparent}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@keyframes popIn{from{opacity:0;transform:scale(0.92) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.flash-gold{animation:flashGold 0.6s ease-out;}
+.shake{animation:shakeX 0.4s ease;}
+.pop-in{animation:popIn 0.25s ease;}
 
 /* ─── TOP BAR ─────────────────────────────────────────────── */
-.topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--gold-line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+.topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--gold-line);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm);}
 .logo-area{display:flex;align-items:center;gap:10px;}
-.logo-shield{width:38px;height:38px;flex-shrink:0;}
-.brand-name{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:0.05em;color:var(--gold-hi);}
-.brand-sub{font-size:9px;color:var(--text-3);font-weight:500;letter-spacing:0.1em;text-transform:uppercase;}
-.live-pill{display:flex;align-items:center;gap:5px;background:rgba(21,128,61,0.1);border:0.5px solid rgba(21,128,61,0.3);border-radius:20px;padding:4px 11px;font-size:10px;font-weight:600;color:var(--green);}
+.logo-shield{width:40px;height:40px;flex-shrink:0;}
+.brand-name-main{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:0.06em;color:var(--gold-hi);line-height:1;}
+.brand-name{font-size:9px;color:var(--text-3);font-weight:600;letter-spacing:0.12em;text-transform:uppercase;margin-top:1px;}
+.brand-sub{font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px;
+  background:linear-gradient(90deg,var(--gold-hi),var(--gold),var(--gold-hi));
+  background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shimmer 3.5s linear infinite;}
+.live-pill{display:flex;align-items:center;gap:5px;background:rgba(14,159,110,0.1);border:0.5px solid rgba(14,159,110,0.3);border-radius:20px;padding:4px 11px;font-size:10px;font-weight:600;color:var(--green);}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.3s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.2}}
 
@@ -47,23 +63,34 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
 .sec-label{font-size:9px;font-weight:600;color:var(--text-3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
 
 /* ─── HOME ───────────────────────────────────────────────── */
-.home-hero{padding:18px 16px 10px;}
-.home-title{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);}
+.home-hero{position:relative;padding:22px 16px 14px;overflow:hidden;background:radial-gradient(120% 100% at 50% 0%,var(--gold-glow),transparent 60%);}
+.home-title{font-family:var(--font-display);font-size:23px;font-weight:700;color:var(--text);}
 .home-sub{font-size:12px;color:var(--text-3);margin-top:2px;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:4px 12px 14px;}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);padding:10px 6px;text-align:center;}
+.stat-num{font-family:var(--font-display);font-size:19px;font-weight:700;color:var(--gold-hi);line-height:1;}
+.stat-lbl{font-size:8px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.04em;margin-top:3px;font-weight:600;}
+.live-match-card{margin:0 12px 14px;background:linear-gradient(135deg,var(--gold-dim),rgba(201,150,26,0.02));border:1.5px solid var(--gold-line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;cursor:pointer;}
+.live-match-card:active{transform:scale(0.98);}
+.lmc-head{display:flex;align-items:center;justify-content:between;justify-content:space-between;margin-bottom:8px;}
+.lmc-tag{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--green);letter-spacing:0.05em;text-transform:uppercase;}
+.lmc-teams{display:flex;align-items:center;justify-content:space-between;font-family:var(--font-display);font-weight:700;}
+.lmc-score{font-size:18px;color:var(--gold-hi);}
 .sport-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 4px;}
-.sport-card{border-radius:var(--radius);padding:16px 12px;text-align:center;cursor:pointer;border:1px solid var(--border);background:var(--bg-2);transition:box-shadow 0.15s,transform 0.12s;}
-.sport-card:active{transform:scale(0.97);}
-.sport-active{border-color:var(--gold-line);box-shadow:0 2px 12px var(--gold-glow);}
+.sport-card{border-radius:var(--radius);padding:18px 12px;text-align:center;cursor:pointer;border:1px solid var(--border);background:var(--bg);box-shadow:var(--shadow-sm);transition:box-shadow 0.18s,transform 0.12s,border-color 0.18s;}
+.sport-card:active{transform:scale(0.96);}
+.sport-active:hover{box-shadow:var(--shadow);border-color:var(--gold);}
 .sport-soon{border-color:rgba(29,78,216,0.2);}
 .sport-coming{opacity:0.45;cursor:default;}
+.sport-icon-circle{width:46px;height:46px;border-radius:50%;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:21px;color:var(--gold-hi);}
 .sport-icon{font-size:30px;margin-bottom:6px;}
-.sport-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--gold-hi);}
+.sport-name{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text);}
 .sport-tag{font-size:9px;font-weight:600;color:var(--gold);letter-spacing:0.06em;text-transform:uppercase;margin-top:3px;}
 .coming-tag{color:var(--text-4);}
 .home-section-bar{display:flex;align-items:center;padding:12px 12px 8px;}
 
 /* ─── MATCH CARDS ────────────────────────────────────────── */
-.match-card{background:var(--bg-2);border-radius:var(--radius);border:1px solid var(--border);padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s;}
+.match-card{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
 .match-card:active{border-color:var(--gold);}
 .match-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .match-format{font-size:10px;color:var(--text-2);font-weight:500;}

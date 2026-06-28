@@ -193,7 +193,60 @@ async function saveMatch() {
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────
+function computeHomeStats() {
+  const totalMatches = S.history.length;
+  const playerSet = new Set();
+  S.teams.forEach(t=>t.players.forEach(p=>p&&playerSet.add(p.trim().toLowerCase())));
+  S.history.forEach(m=>{
+    (m.team1?.players||[]).forEach(p=>p&&playerSet.add(p.trim().toLowerCase()));
+    (m.team2?.players||[]).forEach(p=>p&&playerSet.add(p.trim().toLowerCase()));
+  });
+  let boundaries=0;
+  S.history.filter(m=>m.sport==='cricket').forEach(m=>{
+    [m.inning1,m.inning2].filter(Boolean).forEach(inn=>{
+      (inn.batters||[]).forEach(b=>{ boundaries += (b.fours||0)+(b.sixes||0); });
+    });
+  });
+  return {totalMatches, players:playerSet.size, tournaments:S.tournaments.length, boundaries};
+}
+
+function renderHomeStats() {
+  const cont=$('home-stats'); if(!cont) return;
+  const s=computeHomeStats();
+  cont.innerHTML=`
+    <div class="stat-card"><div class="stat-num">${s.totalMatches}</div><div class="stat-lbl">Matches</div></div>
+    <div class="stat-card"><div class="stat-num">${s.players}</div><div class="stat-lbl">Players</div></div>
+    <div class="stat-card"><div class="stat-num">${s.tournaments}</div><div class="stat-lbl">Tournaments</div></div>
+    <div class="stat-card"><div class="stat-num">${s.boundaries}</div><div class="stat-lbl">Boundaries</div></div>`;
+}
+
+function renderLiveMatchCard() {
+  const slot=$('home-live-slot'); if(!slot) return;
+  const live=S.history.find(m=>m.status==='live');
+  if(!live) { slot.innerHTML=''; return; }
+  let scoreHtml;
+  if(live.sport==='cricket') {
+    const inn=live.current||live.inning2||live.inning1;
+    scoreHtml=inn?`${inn.runs}/${inn.wickets} <span style="font-size:11px;color:var(--text-3)">(${oversStr(inn.balls)} ov)</span>`:'—';
+  } else {
+    scoreHtml=`${live.goals1||0} – ${live.goals2||0}`;
+  }
+  slot.innerHTML=`
+    <div class="live-match-card pop-in" onclick="window.resumeOrView(${live.id})">
+      <div class="lmc-head">
+        <span class="lmc-tag"><span class="live-dot"></span>Live Now</span>
+        <span style="font-size:10px;color:var(--text-3)">${live.sport==='cricket'?'🏏':'⚽'}${live.venue?' · '+live.venue:''}</span>
+      </div>
+      <div class="lmc-teams">
+        <span style="font-size:13px;color:var(--text)">${live.team1.name} vs ${live.team2.name}</span>
+        <span class="lmc-score">${scoreHtml}</span>
+      </div>
+    </div>`;
+}
+
 function renderDashboard() {
+  renderHomeStats();
+  renderLiveMatchCard();
   const cont=$('match-list');
   const list=S.history.slice().sort((a,b)=>b.id-a.id);
   if(!list.length) {
