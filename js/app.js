@@ -1107,10 +1107,75 @@ function renderFootball() {
 // ══════════════════════════════════════════════════════════════
 //   SUMMARY
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+//   CONFETTI + SUMMARY EXTRAS
+// ══════════════════════════════════════════════════════════════
+function fireConfetti() {
+  const canvas=$('confetti-canvas'); if(!canvas) return;
+  canvas.classList.remove('hidden');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const ctx=canvas.getContext('2d');
+  const colors=['#C9961A','#E8B84B','#A67010','#0E9F6E','#183153'];
+  const particles=Array.from({length:70},()=>({
+    x:Math.random()*canvas.width, y:-20-Math.random()*canvas.height*0.3,
+    r:4+Math.random()*5, c:colors[Math.floor(Math.random()*colors.length)],
+    vy:2+Math.random()*3, vx:-1.5+Math.random()*3,
+    rot:Math.random()*360, vr:-6+Math.random()*12
+  }));
+  let frame=0;
+  function tick() {
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.6);
+      ctx.restore();
+    });
+    if(frame<200) requestAnimationFrame(tick);
+    else { canvas.classList.add('hidden'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+  }
+  tick();
+}
+
+function renderTournamentBadge(m) {
+  const slot=$('tourney-badge-slot'); if(!slot) return;
+  const t=m.tournamentId ? S.tournaments.find(x=>x.id===m.tournamentId) : null;
+  slot.innerHTML = t ? `<div class="tourney-badge">🏆 ${t.name}</div>` : '';
+}
+
+function renderScoreCompare(m) {
+  const slot=$('score-compare-slot'); if(!slot) return;
+  let rows;
+  if(m.sport==='cricket') {
+    const i1=m.inning1, i2=m.inning2;
+    rows=[
+      {name:m.team1.name, val:i1?i1.runs:0, sub:i1?`${i1.runs}/${i1.wickets} (${oversStr(i1.balls)} ov)`:'—'},
+      {name:m.team2.name, val:i2?i2.runs:0, sub:i2?`${i2.runs}/${i2.wickets} (${oversStr(i2.balls)} ov)`:'—'}
+    ];
+  } else {
+    rows=[
+      {name:m.team1.name, val:m.goals1||0, sub:`${m.goals1||0} goals`},
+      {name:m.team2.name, val:m.goals2||0, sub:`${m.goals2||0} goals`}
+    ];
+  }
+  const max=Math.max(rows[0].val, rows[1].val, 1);
+  slot.innerHTML=`<div class="score-compare">
+    ${rows.map(r=>`
+      <div class="sc-row">
+        <div class="sc-row-head"><span>${r.name}</span><b>${r.sub}</b></div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" style="width:${Math.max(4,(r.val/max)*100)}%"></div></div>
+      </div>`).join('')}
+  </div>`;
+}
+
 function renderSummary() {
   const m=S.match; if(!m) return;
   $('winner-name').textContent=m.winner||'Tied! 🤝';
   $('winner-sub').textContent=m.result||'';
+  renderTournamentBadge(m);
+  renderScoreCompare(m);
+  setTimeout(fireConfetti,200);
 
   if(m.sport==='football') {
     $('mom-card').style.display='none';

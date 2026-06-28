@@ -193,7 +193,16 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
 .nav-icon{font-size:22px;}
 
 /* ─── SUMMARY ────────────────────────────────────────────── */
-.winner-card{margin:12px;background:linear-gradient(135deg,var(--gold-dim),rgba(201,150,26,0.04));border:1px solid var(--gold-line);border-radius:var(--radius);padding:22px 16px;text-align:center;}
+.confetti-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:90;pointer-events:none;}
+.tourney-badge{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 12px 0;background:var(--gold-dim);border:1px solid var(--gold-line);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--gold-hi);letter-spacing:0.03em;}
+.score-compare{margin:0 12px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+.sc-row{margin-bottom:10px;}
+.sc-row:last-child{margin-bottom:0;}
+.sc-row-head{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.sc-row-head b{font-family:var(--font-display);color:var(--gold-hi);}
+.sc-bar-track{height:8px;background:var(--bg-3);border-radius:4px;overflow:hidden;}
+.sc-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),#E8B84B);border-radius:4px;transition:width 0.6s ease;}
+.winner-card{margin:12px;background:linear-gradient(135deg,var(--gold-dim),rgba(201,150,26,0.04));border:1px solid var(--gold-line);border-radius:var(--radius);padding:22px 16px;text-align:center;box-shadow:var(--shadow);}
 .trophy{font-size:44px;margin-bottom:8px;}
 .winner-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.1em;}
 .winner-name{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--gold-hi);margin:4px 0;}
