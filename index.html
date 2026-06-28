@@ -57,6 +57,21 @@
       <div class="sport-name">Match Plan</div>
       <div class="sport-tag">Team Roster · PDF</div>
     </div>
+    <div class="sport-card sport-active" onclick="gotoTeamsMgr()">
+      <div class="sport-icon">🗂️</div>
+      <div class="sport-name">Saved Teams</div>
+      <div class="sport-tag">Reuse Rosters</div>
+    </div>
+    <div class="sport-card sport-active" onclick="gotoStats()">
+      <div class="sport-icon">📊</div>
+      <div class="sport-name">Player Stats</div>
+      <div class="sport-tag">Career Numbers</div>
+    </div>
+    <div class="sport-card sport-active" onclick="gotoTournaments()">
+      <div class="sport-icon">🏆</div>
+      <div class="sport-name">Tournaments</div>
+      <div class="sport-tag">Points Table</div>
+    </div>
     <div class="sport-card sport-coming">
       <div class="sport-icon">🏐</div>
       <div class="sport-name">Volleyball</div>
@@ -72,6 +87,21 @@
 <!-- MATCH PLAN (Roster) -->
 <div class="page" id="page-plan">
   <div style="padding:14px 12px 28px" id="plan-content"></div>
+</div>
+
+<!-- SAVED TEAMS -->
+<div class="page" id="page-teamsmgr">
+  <div style="padding:14px 12px 28px" id="teamsmgr-content"></div>
+</div>
+
+<!-- PLAYER STATS -->
+<div class="page" id="page-stats">
+  <div style="padding:14px 12px 28px" id="stats-content"></div>
+</div>
+
+<!-- TOURNAMENTS -->
+<div class="page" id="page-tournaments">
+  <div style="padding:14px 12px 28px" id="tournaments-content"></div>
 </div>
 
 <!-- NEW MATCH SETUP -->
@@ -244,6 +274,7 @@
   <div id="summary-scorecards"></div>
   <div style="display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap">
     <button class="share-btn" style="flex:1;min-width:80px" onclick="shareMatch()">📤 Share</button>
+    <button class="share-btn" style="flex:1;min-width:80px;color:var(--purple)" onclick="shareScorecardImage()">🖼 Image</button>
     <button class="share-btn" style="flex:1;min-width:80px;color:var(--blue)" onclick="exportPDF()">📄 PDF</button>
     <button class="share-btn" style="flex:1;min-width:80px;color:var(--red)" onclick="deleteCurrentMatch()">🗑 Delete</button>
   </div>

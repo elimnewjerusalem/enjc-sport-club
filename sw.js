@@ -1,4 +1,4 @@
-const CACHE = 'enjc-sport-v3';
+const CACHE = 'enjc-sport-v4';
 const SHELL = [
   './',
   './index.html',

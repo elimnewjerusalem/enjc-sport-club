@@ -1,5 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════
-   ENJC Sport Club v7
+   ENJC Sport Club v8
+   New features (v7 → v8):
+   1. Saved Team Rosters — save/load player lists per team so you
+      don't retype them every match (Home → Saved Teams)
+   2. Player Career Stats — aggregated runs/wickets/SR/economy
+      across all stored matches (Home → Player Stats)
+   3. Tournament Mode — group matches under a tournament, auto
+      points table (2 pts win, 1 pt tie) (Home → Tournaments)
+   4. Shareable Scorecard Image — canvas-generated PNG result
+      card, shares via Web Share API or downloads (Summary → Image)
+
    Bugs fixed (v6 → v7):
    1. Match Plan PDF dropped typed team names — exportRosterPDF's
       getBlock() had a ternary/|| operator-precedence bug, so the
@@ -9,6 +19,12 @@
       or target-chased — so a wicket on the last ball of the last
       over (without being all-out) wrongly kept the innings going
       instead of ending it. Now uses isInningsOver() consistently.
+   3. CRITICAL: target()/isChaseDone() relied on match.current and
+      match.inning1 being the *same object* during innings 1 — once
+      Firestore sync replaced S.match with a deserialized copy, the
+      two became separate objects and inning1.runs froze at 0,
+      making target()=1 and ending the innings on the very first
+      scoring ball. Now target is explicitly null unless innings===2.
 
    Bugs fixed (earlier, v6):
    1. Team 1 only 1 ball then jumps to team 2 — checkInningsEnd
@@ -19,7 +35,7 @@
       unsub was not awaited; fixed with proper async chain
    4. Match plan (roster) page — new dedicated page with PDF export
    5. inning2 batters empty in PDF — current inn spread missing batters
-   New features:
+   New features (v6):
    6. Match Plan page — team roster, positions, PDF export
    7. Toss selector before match start
 ═══════════════════════════════════════════════════════════════ */
@@ -33,8 +49,12 @@ import {
 const S = {
   match:   null,
   history: JSON.parse(localStorage.getItem('enjc_matches') || '[]'),
+  teams:   JSON.parse(localStorage.getItem('enjc_teams') || '[]'),
+  tournaments: JSON.parse(localStorage.getItem('enjc_tournaments') || '[]'),
   sport:   'cricket'
 };
+function saveTeams()       { localStorage.setItem('enjc_teams', JSON.stringify(S.teams)); }
+function saveTournaments() { localStorage.setItem('enjc_tournaments', JSON.stringify(S.tournaments)); }
 let historyUnsub = null, matchUnsub = null, pendingDelete = null, isScorer = false;
 
 // ─── UTILS ───────────────────────────────────────────────────
@@ -411,6 +431,14 @@ function renderSetupPage(sport) {
       <input class="form-input" id="match-venue" placeholder="e.g. ENJC Ground, Tondiarpet"/>
     </div>
 
+    <div class="form-group">
+      <label class="form-label">Tournament <span style="color:var(--text-4)">(optional)</span></label>
+      <select class="form-input" id="match-tournament">
+        <option value="">— None —</option>
+        ${S.tournaments.slice().reverse().map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+      </select>
+    </div>
+
     ${makeTeamBlock('team1','Team 1 / Batting First')}
     ${makeTeamBlock('team2','Team 2')}
 
@@ -448,6 +476,80 @@ function renderSetupPage(sport) {
       $(`toss-t${i+1}`).textContent=n||`Team ${i+1}`;
     });
   });
+
+  // saved team rosters
+  populateTeamSelects();
+  ['team1','team2'].forEach(team=>{
+    $(`${team}-load-select`)?.addEventListener('change', e=>{
+      loadSavedTeam(team, e.target.value);
+      e.target.value='';
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//   SAVED TEAM ROSTERS
+// ══════════════════════════════════════════════════════════════
+function populateTeamSelects() {
+  ['team1','team2'].forEach(team=>{
+    const sel=$(`${team}-load-select`); if(!sel) return;
+    sel.innerHTML = `<option value="">📂 Load saved team…</option>` +
+      S.teams.map(t=>`<option value="${t.id}">${t.name} (${t.players.length})</option>`).join('');
+  });
+}
+
+function loadSavedTeam(team, teamId) {
+  if(!teamId) return;
+  const t=S.teams.find(x=>String(x.id)===String(teamId)); if(!t) return;
+  $(`${team}-name`).value=t.name;
+  $(`${team}-players`).innerHTML='';
+  t.players.forEach(()=>addPlayerRow(team));
+  document.querySelectorAll(`.player-input[data-team="${team}"]`).forEach((inp,i)=>inp.value=t.players[i]||'');
+  showToast(`Loaded "${t.name}" ✓`);
+}
+
+function saveCurrentAsTeam(team) {
+  const name=$(`${team}-name`)?.value.trim();
+  const players=[...document.querySelectorAll(`.player-input[data-team="${team}"]`)].map(i=>i.value.trim()).filter(Boolean);
+  if(!name) { showToast('Enter team name first'); return; }
+  if(players.length<2) { showToast('Add at least 2 players'); return; }
+  const existing=S.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
+  if(existing) existing.players=players;
+  else S.teams.push({id:Date.now(),name,players});
+  saveTeams(); populateTeamSelects();
+  showToast(`Saved "${name}" ✓`);
+}
+
+// ══════════════════════════════════════════════════════════════
+//   SAVED TEAMS — MANAGE PAGE
+// ══════════════════════════════════════════════════════════════
+function gotoTeamsMgr() { renderTeamsMgrPage(); nav('teamsmgr'); }
+
+function renderTeamsMgrPage() {
+  $('teamsmgr-content').innerHTML=`
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">🗂️ Saved Teams</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:18px">Reuse rosters when starting a new match</div>
+    <div id="teams-list"></div>`;
+  const cont=$('teams-list');
+  if(!S.teams.length) {
+    cont.innerHTML=`<div class="empty-state"><div class="empty-icon">🗂️</div><div class="empty-text">No saved teams yet.<br>Save one while setting up a match!</div></div>`;
+    return;
+  }
+  cont.innerHTML=S.teams.slice().reverse().map(t=>`
+    <div class="match-card" style="cursor:default">
+      <div class="match-teams">
+        <span class="mt-name" style="font-size:15px;flex:1">${t.name}</span>
+        <button onclick="deleteSavedTeam(${t.id})"
+          style="background:rgba(220,38,38,0.08);color:var(--red);border:1px solid rgba(220,38,38,0.2);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600;flex-shrink:0">🗑 Delete</button>
+      </div>
+      <div class="match-result" style="color:var(--text-3)">${t.players.length} players · ${t.players.join(', ')}</div>
+    </div>`).join('');
+}
+
+function deleteSavedTeam(id) {
+  S.teams=S.teams.filter(t=>t.id!==id);
+  saveTeams(); renderTeamsMgrPage();
+  showToast('Team deleted');
 }
 
 function makeTeamBlock(team, label) {
@@ -456,6 +558,13 @@ function makeTeamBlock(team, label) {
       <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold-hi);margin-bottom:10px">${label}</div>
       <div class="form-group" style="margin-bottom:10px">
         <input class="form-input" id="${team}-name" placeholder="${team==='team1'?'Team 1 name':'Team 2 name'}"/>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <select class="form-input" id="${team}-load-select" style="flex:1;font-size:12px;padding:9px 8px">
+          <option value="">📂 Load saved team…</option>
+        </select>
+        <button onclick="saveCurrentAsTeam('${team}')"
+          style="background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:0 14px;font-family:var(--font-display);font-size:12px;font-weight:700;white-space:nowrap">💾 Save</button>
       </div>
       <div class="form-label" style="margin-bottom:6px">Players (opener → last bat)</div>
       <div id="${team}-players"></div>
@@ -509,7 +618,8 @@ function startMatch() {
     id:Date.now(), sport,
     team1:{name:t1name,players:t1p},
     team2:{name:t2name,players:t2p},
-    venue, status:'live', createdAt:Date.now()
+    venue, status:'live', createdAt:Date.now(),
+    tournamentId: $('match-tournament')?.value ? Number($('match-tournament').value) : null
   };
 
   if(sport==='cricket') {
@@ -1094,6 +1204,262 @@ async function confirmDelete() {
   showToast('Match deleted'); renderDashboard(); nav('home');
 }
 
+// ══════════════════════════════════════════════════════════════
+//   PLAYER CAREER STATS
+// ══════════════════════════════════════════════════════════════
+function computePlayerStats() {
+  const bat={}, bowl={};
+  S.history.filter(m=>m.sport==='cricket').forEach(m=>{
+    [{inn:m.inning1,team:m.team1,bwt:m.team2},{inn:m.inning2,team:m.team2,bwt:m.team1}].forEach(({inn,team,bwt})=>{
+      if(!inn) return;
+      (inn.batters||[]).forEach(b=>{
+        const n=team.players[b.idx]; if(!n) return;
+        const s=bat[n]=bat[n]||{name:n,matches:new Set(),runs:0,balls:0,fours:0,sixes:0,hs:0,outs:0};
+        s.matches.add(m.id); s.runs+=b.runs; s.balls+=b.balls; s.fours+=b.fours; s.sixes+=b.sixes;
+        if(b.runs>s.hs) s.hs=b.runs;
+        if(b.out) s.outs++;
+      });
+      (inn.bowlers||[]).forEach(b=>{
+        const n=bwt.players[b.idx]; if(!n) return;
+        const s=bowl[n]=bowl[n]||{name:n,matches:new Set(),wickets:0,runs:0,balls:0};
+        s.matches.add(m.id); s.wickets+=b.wickets; s.runs+=b.runs; s.balls+=b.balls;
+      });
+    });
+  });
+  const batters=Object.values(bat).map(s=>({
+    ...s, matches:s.matches.size,
+    avg: s.outs?(s.runs/s.outs).toFixed(1):'—',
+    sr: sr(s.runs,s.balls)
+  })).sort((a,b)=>b.runs-a.runs);
+  const bowlers=Object.values(bowl).map(s=>({
+    ...s, matches:s.matches.size,
+    overs: oversStr(s.balls),
+    econ: s.balls?((s.runs/s.balls)*6).toFixed(1):'—'
+  })).sort((a,b)=>b.wickets-a.wickets);
+  return {batters,bowlers};
+}
+
+function gotoStats() { renderStatsPage(); nav('stats'); }
+
+function renderStatsPage() {
+  const {batters,bowlers}=computePlayerStats();
+  $('stats-content').innerHTML=`
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">📊 Player Stats</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:18px">Career numbers across all cricket matches</div>
+
+    <div class="sec-label">Top Run Scorers</div>
+    <div class="stats-card" style="margin-bottom:16px">
+      <div class="stats-head"><div class="sh-name">Player</div><div class="sh-stat">M</div><div class="sh-stat">R</div><div class="sh-stat">HS</div><div class="sh-stat">SR</div></div>
+      ${batters.length?batters.map(p=>`
+        <div class="stats-row">
+          <div class="player-ava">${inits(p.name)}</div>
+          <div style="flex:1"><div class="player-name">${p.name}</div><div class="player-sub">Avg ${p.avg} · ${p.fours}×4 ${p.sixes}×6</div></div>
+          <div class="stat-val">${p.matches}</div><div class="stat-val gold">${p.runs}</div><div class="stat-val">${p.hs}</div><div class="stat-val">${p.sr}</div>
+        </div>`).join(''):`<div style="padding:14px;font-size:12px;color:var(--text-3)">No data yet — play some matches!</div>`}
+    </div>
+
+    <div class="sec-label">Top Wicket Takers</div>
+    <div class="stats-card">
+      <div class="stats-head"><div class="sh-name">Player</div><div class="sh-stat">M</div><div class="sh-stat">W</div><div class="sh-stat">O</div><div class="sh-stat">Eco</div></div>
+      ${bowlers.length?bowlers.map(p=>`
+        <div class="stats-row">
+          <div class="player-ava" style="background:rgba(109,40,217,0.1);color:var(--purple)">${inits(p.name)}</div>
+          <div style="flex:1"><div class="player-name">${p.name}</div></div>
+          <div class="stat-val">${p.matches}</div><div class="stat-val gold">${p.wickets}</div><div class="stat-val">${p.overs}</div><div class="stat-val">${p.econ}</div>
+        </div>`).join(''):`<div style="padding:14px;font-size:12px;color:var(--text-3)">No data yet</div>`}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//   TOURNAMENT MODE + POINTS TABLE
+// ══════════════════════════════════════════════════════════════
+function gotoTournaments() { renderTournamentsPage(); nav('tournaments'); }
+
+function renderTournamentsPage() {
+  $('tournaments-content').innerHTML=`
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">🏆 Tournaments</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:18px">Group matches together, track the points table</div>
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <input class="form-input" id="new-tourney-name" placeholder="e.g. ENJC Summer Cup 2026" style="flex:1"/>
+      <button onclick="createTournament()"
+        style="background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:0 16px;font-family:var(--font-display);font-size:13px;font-weight:700;white-space:nowrap">+ Add</button>
+    </div>
+    <div id="tourney-list"></div>`;
+  renderTourneyList();
+}
+
+function renderTourneyList() {
+  const cont=$('tourney-list'); if(!cont) return;
+  if(!S.tournaments.length) {
+    cont.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">No tournaments yet.<br>Create one above!</div></div>`;
+    return;
+  }
+  cont.innerHTML=S.tournaments.slice().reverse().map(t=>{
+    const matches=S.history.filter(m=>m.tournamentId===t.id);
+    return `<div class="match-card" onclick="viewTournament(${t.id})">
+      <div class="match-meta"><span class="match-format">🏆 ${matches.length} match${matches.length!==1?'es':''}</span></div>
+      <div class="match-teams"><span class="mt-name" style="font-size:15px">${t.name}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function createTournament() {
+  const name=$('new-tourney-name').value.trim();
+  if(!name) { showToast('Enter tournament name'); return; }
+  S.tournaments.push({id:Date.now(),name,createdAt:Date.now()});
+  saveTournaments();
+  $('new-tourney-name').value='';
+  renderTourneyList();
+  showToast('Tournament created ✓');
+}
+
+function viewTournament(id) {
+  const t=S.tournaments.find(x=>x.id===id); if(!t) return;
+  const matches=S.history.filter(m=>m.tournamentId===id && m.sport==='cricket');
+
+  const table={};
+  const touch=name=>table[name]=table[name]||{name,p:0,w:0,l:0,t:0,pts:0};
+  matches.forEach(m=>{
+    if(m.status!=='done') return;
+    touch(m.team1.name); touch(m.team2.name);
+    table[m.team1.name].p++; table[m.team2.name].p++;
+    if(m.winner===null) {
+      table[m.team1.name].t++; table[m.team2.name].t++;
+      table[m.team1.name].pts+=1; table[m.team2.name].pts+=1;
+    } else if(m.winner===m.team1.name) {
+      table[m.team1.name].w++; table[m.team2.name].l++; table[m.team1.name].pts+=2;
+    } else {
+      table[m.team2.name].w++; table[m.team1.name].l++; table[m.team2.name].pts+=2;
+    }
+  });
+  const rows=Object.values(table).sort((a,b)=>b.pts-a.pts);
+
+  $('tournaments-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <button onclick="renderTournamentsPage()" style="background:none;border:none;color:var(--gold-hi);font-size:22px;padding:0 4px;font-family:var(--font-display)">←</button>
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--gold-hi)">${t.name}</div>
+    </div>
+    <div class="sec-label">Points Table</div>
+    <div class="stats-card" style="margin-bottom:16px">
+      <div class="stats-head"><div class="sh-name">Team</div><div class="sh-stat">P</div><div class="sh-stat">W</div><div class="sh-stat">L</div><div class="sh-stat">Pts</div></div>
+      ${rows.length?rows.map(r=>`
+        <div class="stats-row">
+          <div style="flex:1"><div class="player-name">${r.name}</div>${r.t?`<div class="player-sub">${r.t} tied</div>`:''}</div>
+          <div class="stat-val">${r.p}</div><div class="stat-val">${r.w}</div><div class="stat-val">${r.l}</div><div class="stat-val gold">${r.pts}</div>
+        </div>`).join(''):`<div style="padding:14px;font-size:12px;color:var(--text-3)">No completed matches yet</div>`}
+    </div>
+    <div class="sec-label">Matches (${matches.length})</div>
+    <div id="tourney-match-list"></div>`;
+
+  const cont=$('tourney-match-list');
+  if(!matches.length) {
+    cont.innerHTML=`<div class="empty-state"><div class="empty-icon">🏏</div><div class="empty-text">No matches added yet.<br>Pick this tournament when starting a new match.</div></div>`;
+    return;
+  }
+  cont.innerHTML=matches.slice().sort((a,b)=>b.id-a.id).map(m=>{
+    const i1=m.inning1, i2=m.inning2;
+    const s1=i1?`${i1.runs}/${i1.wickets}`:'—', s2=i2?`${i2.runs}/${i2.wickets}`:'—';
+    return `<div class="match-card" onclick="window.resumeOrView(${m.id})">
+      <div class="match-meta"><span class="match-format">🏏 ${m.format} Overs · ${fmtDate(m.id)}</span></div>
+      <div class="match-teams">
+        <span class="mt-name">${m.team1.name}</span>
+        <span class="mt-score" style="font-size:13px;flex:1.5;text-align:center">${s1} vs ${s2}</span>
+        <span class="mt-name" style="text-align:right">${m.team2.name}</span>
+      </div>
+      <div class="match-result">${m.winner!==undefined&&m.status==='done'?(m.winner?'🏆 '+m.winner+' won':'🤝 Match Tied'):'⚡ In Progress'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//   SHAREABLE SCORECARD IMAGE
+// ══════════════════════════════════════════════════════════════
+function shareScorecardImage() {
+  const m=S.match; if(!m) return;
+  const W=720,H=900;
+  const canvas=document.createElement('canvas');
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#F9F5EC'; ctx.fillRect(0,0,W,140);
+  ctx.strokeStyle='#C9961A'; ctx.lineWidth=4; ctx.strokeRect(10,10,W-20,H-20);
+  ctx.textAlign='center';
+
+  ctx.fillStyle='#A67010'; ctx.font='bold 32px Rajdhani, sans-serif';
+  ctx.fillText('🦁 ENJC SPORTS CLUB', W/2, 58);
+  ctx.fillStyle='#8B7040'; ctx.font='600 13px Inter, sans-serif';
+  ctx.fillText('GAME ON FIRE 🔥', W/2, 80);
+  ctx.fillStyle='#5C4A10'; ctx.font='13px Inter, sans-serif';
+  ctx.fillText(`${m.venue?m.venue+' · ':''}${fmtDate(m.id)}`, W/2, 102);
+
+  let y=190;
+  if(m.sport==='cricket') {
+    const i1=m.inning1, i2=m.inning2;
+    ctx.fillStyle='#1A1200'; ctx.font='bold 26px Rajdhani, sans-serif';
+    ctx.fillText(m.team1.name, W/2, y);
+    ctx.fillStyle='#A67010'; ctx.font='bold 52px Rajdhani, sans-serif';
+    ctx.fillText(i1?`${i1.runs}/${i1.wickets}`:'—', W/2, y+58);
+    ctx.fillStyle='#8B7040'; ctx.font='13px Inter, sans-serif';
+    ctx.fillText(i1?`(${oversStr(i1.balls)} overs)`:'', W/2, y+80);
+
+    ctx.fillStyle='#B8A070'; ctx.font='bold 18px Rajdhani, sans-serif';
+    ctx.fillText('VS', W/2, y+115);
+
+    y+=150;
+    ctx.fillStyle='#1A1200'; ctx.font='bold 26px Rajdhani, sans-serif';
+    ctx.fillText(m.team2.name, W/2, y);
+    ctx.fillStyle='#A67010'; ctx.font='bold 52px Rajdhani, sans-serif';
+    ctx.fillText(i2?`${i2.runs}/${i2.wickets}`:'—', W/2, y+58);
+    ctx.fillStyle='#8B7040'; ctx.font='13px Inter, sans-serif';
+    ctx.fillText(i2?`(${oversStr(i2.balls)} overs)`:'', W/2, y+80);
+    y+=140;
+  } else {
+    ctx.fillStyle='#1A1200'; ctx.font='bold 24px Rajdhani, sans-serif';
+    ctx.fillText(`${m.team1.name}  vs  ${m.team2.name}`, W/2, y);
+    ctx.fillStyle='#A67010'; ctx.font='bold 58px Rajdhani, sans-serif';
+    ctx.fillText(`${m.goals1||0}  –  ${m.goals2||0}`, W/2, y+70);
+    y+=140;
+  }
+
+  ctx.fillStyle='#FFF8E8'; ctx.fillRect(60,y,W-120,50);
+  ctx.strokeStyle='#C9961A'; ctx.lineWidth=1.5; ctx.strokeRect(60,y,W-120,50);
+  ctx.fillStyle='#A67010'; ctx.font='bold 18px Rajdhani, sans-serif';
+  ctx.fillText(m.result||'In Progress', W/2, y+32);
+  y+=90;
+
+  if(m.sport==='cricket') {
+    const allB=[...(m.inning1?.batters||[]).map(b=>({...b,team:m.team1})),
+                ...(m.inning2?.batters||[]).map(b=>({...b,team:m.team2}))];
+    const mom=allB.reduce((a,b)=>b.runs>(a?.runs||-1)?b:a,null);
+    if(mom) {
+      const n=mom.team.players[mom.idx]||'—';
+      ctx.fillStyle='#C9961A'; ctx.font='600 12px Inter, sans-serif';
+      ctx.fillText('⭐ MAN OF THE MATCH', W/2, y);
+      ctx.fillStyle='#1A1200'; ctx.font='bold 22px Rajdhani, sans-serif';
+      ctx.fillText(n, W/2, y+28);
+      ctx.fillStyle='#5C4A10'; ctx.font='12px Inter, sans-serif';
+      ctx.fillText(`${mom.runs} runs (${mom.balls} balls) · SR ${sr(mom.runs,mom.balls)}`, W/2, y+48);
+    }
+  }
+
+  ctx.fillStyle='#B8A070'; ctx.font='11px Inter, sans-serif';
+  ctx.fillText('Generated by ENJC Sports Club PWA', W/2, H-30);
+
+  canvas.toBlob(blob=>{
+    if(!blob) { showToast('Could not generate image'); return; }
+    const file=new File([blob],`enjc-scorecard-${m.id}.png`,{type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})) {
+      navigator.share({files:[file],title:'ENJC Sports Club',text:m.result||''}).catch(()=>{});
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`enjc-scorecard-${m.id}.png`; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),3000);
+      showToast('Image downloaded ✓');
+    }
+  },'image/png');
+}
+
 // ─── EXPOSE ──────────────────────────────────────────────────
 Object.assign(window,{
   nav, gotoNewMatch, gotoMatchPlan, resumeOrView,
@@ -1101,8 +1467,11 @@ Object.assign(window,{
   selectToss, startMatch,
   addBall, selectModalItem, closeModal, recordWicket, undoLastBall,
   fbEvent, fbHalfTime, fbFullTime, fbUndo,
-  shareMatch, shareLiveLink, exportPDF, exportRosterPDF,
-  deleteCurrentMatch, confirmDelete
+  shareMatch, shareLiveLink, exportPDF, exportRosterPDF, shareScorecardImage,
+  deleteCurrentMatch, confirmDelete,
+  gotoTeamsMgr, saveCurrentAsTeam, deleteSavedTeam,
+  gotoStats,
+  gotoTournaments, createTournament, viewTournament, renderTournamentsPage
 });
 
 // ─── INIT ────────────────────────────────────────────────────
