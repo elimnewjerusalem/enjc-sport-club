@@ -89,7 +89,10 @@ function setMatch(match, scorer=true) {
     if(ap==='score')    renderCricket();
     if(ap==='football') renderFootball();
     if(ap==='summary')  renderSummary();
-  }, e=>console.error('match sub error',e)).then(unsub=>{ matchUnsub=unsub; });
+  }, e=>{
+    console.error('match sub error',e);
+    showToast(e?.code==='permission-denied' ? '⚠️ Firestore blocked (check rules)' : '⚠️ Live sync error');
+  }).then(unsub=>{ matchUnsub=unsub; });
 }
 
 function initSync() {
@@ -113,7 +116,14 @@ function initSync() {
         if(ap==='summary')  renderSummary();
       }
     }
-  }, () => { console.warn('Firestore offline, using localStorage'); renderDashboard(); })
+  }, (e) => {
+    console.warn('Firestore offline, using localStorage', e);
+    if(!window.__syncErrShown) {
+      window.__syncErrShown = true;
+      showToast(e?.code==='permission-denied' ? '⚠️ Cross-device sync blocked (check Firestore rules)' : '⚠️ No live sync — saved on this phone only');
+    }
+    renderDashboard();
+  })
     .then(unsub => { historyUnsub=unsub; });
 }
 
@@ -152,7 +162,14 @@ async function saveMatch() {
   const idx=S.history.findIndex(x=>x.id===m.id);
   idx>=0 ? S.history[idx]=m : S.history.push(m);
   localStorage.setItem('enjc_matches',JSON.stringify(S.history));
-  try { await fbSave(m); } catch(e) { console.warn('Offline, saved locally'); }
+  try { await fbSave(m); }
+  catch(e) {
+    console.warn('Offline, saved locally', e);
+    if(!window.__syncErrShown) {
+      window.__syncErrShown = true;
+      showToast(e?.code==='permission-denied' ? '⚠️ Not synced to other phones (check Firestore rules)' : '⚠️ Saved on this phone only (offline)');
+    }
+  }
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────
@@ -639,18 +656,25 @@ function addBall(type,runs) {
 // BUG1 FIX: separate innings-end checks, no double call
 function isInningsOver() {
   const inn=S.match.current;
-  const tgt=target(S.match.inning1);
+  // CRITICAL FIX: only innings 2 can have a chase target. Previously target()
+  // relied on match.current and match.inning1 being the *same object* during
+  // innings 1 (so the off-by-one math was always false) — but once Firestore
+  // sync replaces S.match with a freshly-deserialized copy, current and
+  // inning1 become separate objects and inning1.runs freezes at 0, making
+  // target()=1 and falsely ending the innings on the very first scoring ball.
+  const tgt = S.match.innings===2 ? target(S.match.inning1) : null;
   const allOut=inn.wickets>=Math.min(S.match[inn.battingTeam].players.length-1,10);
   return inn.balls>=inn.maxOvers*6 || allOut || (tgt!==null&&inn.runs>=tgt);
 }
 function isChaseDone() {
-  const inn=S.match.current, tgt=target(S.match.inning1);
+  const inn=S.match.current;
+  const tgt = S.match.innings===2 ? target(S.match.inning1) : null;
   return tgt!==null && inn.runs>=tgt;
 }
 
 function doInningsEnd() {
   const match=S.match, inn=match.current;
-  const tgt=target(match.inning1);
+  const tgt=match.innings===2?target(match.inning1):null;
   const chased=tgt!==null&&inn.runs>=tgt;
 
   if(match.innings===1) {
@@ -756,7 +780,7 @@ function renderCricket() {
   const match=S.match; if(!match) return;
   const inn=match.current||match.inning2||match.inning1; if(!inn) return;
   const bt=match[inn.battingTeam], bwt=match[inn.bowlingTeam];
-  const tgt=target(match.inning1), innings=match.innings;
+  const tgt=match.innings===2?target(match.inning1):null, innings=match.innings;
 
   $('sc-header-txt').textContent=`${bt.name} batting · ${innings===1?'1st':'2nd'} innings`;
   $('sc-target-badge').textContent=tgt?`🎯 Target ${tgt}`:'';
