@@ -103,3 +103,41 @@ export async function batchDeleteMatches(ids) {
   ids.forEach(id => batch.delete(doc(col, String(id))));
   await batch.commit();
 }
+
+/* ─── SAVED TEAMS (shared across all 5 phones) ──────────────── */
+async function teamsCol() {
+  const d = await initFirebase();
+  return collection(d, 'teams');
+}
+export async function subscribeToTeams(onChange, onError) {
+  const col = await teamsCol();
+  return onSnapshot(col,
+    snapshot => onChange(snapshot.docs.map(d => d.data())),
+    onError
+  );
+}
+export async function saveTeamFB(team) {
+  const col = await teamsCol();
+  await setDoc(doc(col, String(team.id)), { ...team, updatedAt: Date.now() });
+}
+export async function deleteTeamFB(teamId) {
+  const col = await teamsCol();
+  await deleteDoc(doc(col, String(teamId)));
+}
+
+/* ─── TOURNAMENTS (shared across all 5 phones) ──────────────── */
+async function tournamentsCol() {
+  const d = await initFirebase();
+  return collection(d, 'tournaments');
+}
+export async function subscribeToTournaments(onChange, onError) {
+  const col = await tournamentsCol();
+  return onSnapshot(col,
+    snapshot => onChange(snapshot.docs.map(d => d.data())),
+    onError
+  );
+}
+export async function saveTournamentFB(t) {
+  const col = await tournamentsCol();
+  await setDoc(doc(col, String(t.id)), { ...t, updatedAt: Date.now() });
+}

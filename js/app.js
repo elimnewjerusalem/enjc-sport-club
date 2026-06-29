@@ -42,7 +42,9 @@
 
 import {
   subscribeToMatchHistory, subscribeToMatch,
-  saveMatch as fbSave, deleteMatch as fbDelete, batchDeleteMatches
+  saveMatch as fbSave, deleteMatch as fbDelete, batchDeleteMatches,
+  subscribeToTeams, saveTeamFB, deleteTeamFB,
+  subscribeToTournaments, saveTournamentFB
 } from './firebase.js';
 
 // ─── STATE ───────────────────────────────────────────────────
@@ -55,6 +57,43 @@ const S = {
 };
 function saveTeams()       { localStorage.setItem('enjc_teams', JSON.stringify(S.teams)); }
 function saveTournaments() { localStorage.setItem('enjc_tournaments', JSON.stringify(S.tournaments)); }
+
+async function pushTeamFB(team) {
+  try { await saveTeamFB(team); }
+  catch(e) {
+    console.warn('Team not synced (offline)', e);
+    showToast(e?.code==='permission-denied' ? '⚠️ Team not synced to other phones (check Firestore rules)' : '⚠️ Team saved on this phone only');
+  }
+}
+async function pushTournamentFB(t) {
+  try { await saveTournamentFB(t); }
+  catch(e) {
+    console.warn('Tournament not synced (offline)', e);
+    showToast(e?.code==='permission-denied' ? '⚠️ Tournament not synced to other phones (check Firestore rules)' : '⚠️ Tournament saved on this phone only');
+  }
+}
+let teamsUnsub=null, tourneyUnsub=null;
+function initTeamsTourneySync() {
+  if(teamsUnsub) teamsUnsub();
+  subscribeToTeams(remote=>{
+    const remoteIds=new Set(remote.map(t=>t.id));
+    const localOnly=S.teams.filter(t=>!remoteIds.has(t.id));
+    S.teams=[...remote,...localOnly].sort((a,b)=>b.id-a.id);
+    localStorage.setItem('enjc_teams', JSON.stringify(S.teams));
+    if(activePage()==='teamsmgr') renderTeamsMgrPage();
+    if(activePage()==='new') populateTeamSelects();
+    if(activePage()==='plan') populatePlanTeamSelect();
+  }, e=>console.warn('teams sub error',e)).then(unsub=>{ teamsUnsub=unsub; });
+
+  if(tourneyUnsub) tourneyUnsub();
+  subscribeToTournaments(remote=>{
+    const remoteIds=new Set(remote.map(t=>t.id));
+    const localOnly=S.tournaments.filter(t=>!remoteIds.has(t.id));
+    S.tournaments=[...remote,...localOnly].sort((a,b)=>b.id-a.id);
+    localStorage.setItem('enjc_tournaments', JSON.stringify(S.tournaments));
+    if(activePage()==='tournaments') renderTourneyList();
+  }, e=>console.warn('tourneys sub error',e)).then(unsub=>{ tourneyUnsub=unsub; });
+}
 let historyUnsub = null, matchUnsub = null, pendingDelete = null, isScorer = false;
 
 // ─── UTILS ───────────────────────────────────────────────────
@@ -367,10 +406,11 @@ function saveCurrentPlanAsTeam() {
   const players=[...document.querySelectorAll('#roster-rows .roster-name')].map(i=>i.value.trim()).filter(Boolean);
   if(!name) { showToast('Enter team name first'); return; }
   if(players.length<2) { showToast('Add at least 2 players'); return; }
-  const existing=S.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
-  if(existing) existing.players=players;
-  else S.teams.push({id:Date.now(),name,players});
+  let team=S.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
+  if(team) team.players=players;
+  else { team={id:Date.now(),name,players}; S.teams.push(team); }
   saveTeams();
+  pushTeamFB(team);
   populatePlanTeamSelect();
   showToast(`Saved "${name}" ✓ — usable in Match Setup & Tournament too`);
 }
@@ -625,10 +665,10 @@ function saveCurrentAsTeam(team) {
   const players=[...document.querySelectorAll(`.player-input[data-team="${team}"]`)].map(i=>i.value.trim()).filter(Boolean);
   if(!name) { showToast('Enter team name first'); return; }
   if(players.length<2) { showToast('Add at least 2 players'); return; }
-  const existing=S.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
-  if(existing) existing.players=players;
-  else S.teams.push({id:Date.now(),name,players});
-  saveTeams(); populateTeamSelects();
+  let saved=S.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
+  if(saved) saved.players=players;
+  else { saved={id:Date.now(),name,players}; S.teams.push(saved); }
+  saveTeams(); pushTeamFB(saved); populateTeamSelects();
   showToast(`Saved "${name}" ✓`);
 }
 
@@ -661,6 +701,7 @@ function renderTeamsMgrPage() {
 function deleteSavedTeam(id) {
   S.teams=S.teams.filter(t=>t.id!==id);
   saveTeams(); renderTeamsMgrPage();
+  deleteTeamFB(id).catch(e=>console.warn('team delete sync failed',e));
   showToast('Team deleted');
 }
 
@@ -1604,8 +1645,10 @@ function createTournament() {
   if(teams.length<2) { showToast('Add at least 2 teams'); return; }
 
   const fixtures=buildSchedule(teams, start, days, venue);
-  S.tournaments.push({id:Date.now(), name, teams, startDate:start, days, venue, fixtures, createdAt:Date.now()});
+  const tourney={id:Date.now(), name, teams, startDate:start, days, venue, fixtures, createdAt:Date.now()};
+  S.tournaments.push(tourney);
   saveTournaments();
+  pushTournamentFB(tourney);
   showToast(`Tournament created — ${fixtures.length} fixtures generated ✓`);
   renderTournamentsPage();
 }
@@ -1842,6 +1885,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   checkDeepLink();
   nav('home');
   initSync();
+  initTeamsTourneySync();
   renderDashboard();
 
   document.querySelectorAll('.nav-item').forEach(item=>{
