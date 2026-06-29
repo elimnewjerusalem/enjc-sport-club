@@ -1,4 +1,4 @@
-const CACHE = 'enjc-sport-v8';
+const CACHE = 'enjc-sport-v9';
 const SHELL = [
   './',
   './index.html',
@@ -7,7 +7,10 @@ const SHELL = [
   './js/firebase.js',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/logo-mark.png',
+  './icons/favicon-32.png',
+  './icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', e => {
