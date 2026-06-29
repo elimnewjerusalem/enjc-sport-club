@@ -319,6 +319,13 @@ function renderMatchPlanPage() {
       <div class="form-group" style="margin-bottom:10px">
         <input class="form-input roster-team-name" id="plan-team-name" placeholder="Team name e.g. ENJC Lions"/>
       </div>
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <select class="form-input" id="plan-load-select" style="flex:1;font-size:12px;padding:9px 8px">
+          <option value="">📂 Load saved team…</option>
+        </select>
+        <button onclick="saveCurrentPlanAsTeam()"
+          style="background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:0 14px;font-family:var(--font-display);font-size:12px;font-weight:700;white-space:nowrap">💾 Save Team</button>
+      </div>
       <div style="font-size:9px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Players</div>
       <div id="roster-rows"></div>
       <button onclick="addRosterRow()"
@@ -332,6 +339,40 @@ function renderMatchPlanPage() {
     </button>
   `;
   for(let i=0;i<11;i++) addRosterRow();
+  populatePlanTeamSelect();
+  $('plan-load-select').addEventListener('change', e=>{
+    loadSavedTeamIntoPlan(e.target.value);
+    e.target.value='';
+  });
+}
+
+function populatePlanTeamSelect() {
+  const sel=$('plan-load-select'); if(!sel) return;
+  sel.innerHTML=`<option value="">📂 Load saved team…</option>` +
+    S.teams.map(t=>`<option value="${t.id}">${t.name} (${t.players.length})</option>`).join('');
+}
+
+function loadSavedTeamIntoPlan(teamId) {
+  if(!teamId) return;
+  const t=S.teams.find(x=>String(x.id)===String(teamId)); if(!t) return;
+  $('plan-team-name').value=t.name;
+  $('roster-rows').innerHTML='';
+  t.players.forEach(()=>addRosterRow());
+  document.querySelectorAll('#roster-rows .roster-name').forEach((inp,i)=>inp.value=t.players[i]||'');
+  showToast(`Loaded "${t.name}" ✓`);
+}
+
+function saveCurrentPlanAsTeam() {
+  const name=$('plan-team-name')?.value.trim();
+  const players=[...document.querySelectorAll('#roster-rows .roster-name')].map(i=>i.value.trim()).filter(Boolean);
+  if(!name) { showToast('Enter team name first'); return; }
+  if(players.length<2) { showToast('Add at least 2 players'); return; }
+  const existing=S.teams.find(t=>t.name.toLowerCase()===name.toLowerCase());
+  if(existing) existing.players=players;
+  else S.teams.push({id:Date.now(),name,players});
+  saveTeams();
+  populatePlanTeamSelect();
+  showToast(`Saved "${name}" ✓ — usable in Match Setup & Tournament too`);
 }
 
 function setPlanSport(sport) {
@@ -1468,6 +1509,12 @@ function renderTournamentsPage() {
       <div id="tourney-team-rows"></div>
       <button onclick="addTourneyTeamRow()"
         style="margin-top:6px;width:100%;background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:8px;font-family:var(--font-display);font-size:13px;font-weight:700">+ Add Team</button>
+      ${S.teams.length?`
+        <div style="font-size:9px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin:10px 0 6px">📂 Quick-add saved team</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+          ${S.teams.map(t=>`<button onclick="quickAddTourneyTeam('${t.name.replace(/'/g,"\\'")}')"
+            style="background:var(--bg);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:14px;padding:5px 12px;font-size:11px;font-weight:600">+ ${t.name}</button>`).join('')}
+        </div>`:''}
       <button onclick="createTournament()"
         style="margin-top:12px;width:100%;background:linear-gradient(135deg,var(--gold),#E8B84B);border:none;color:#FFF;border-radius:8px;padding:11px;font-family:var(--font-display);font-size:14px;font-weight:700">
         🏆 Create Tournament & Generate Schedule
@@ -1488,6 +1535,14 @@ function addTourneyTeamRow() {
     <input class="form-input tourney-team-name" placeholder="Team ${idx} name" style="flex:1;padding:8px 10px;font-size:13px"/>
     <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-3);font-size:16px;padding:0 6px">✕</button>`;
   cont.appendChild(row);
+}
+
+function quickAddTourneyTeam(name) {
+  const inputs=[...document.querySelectorAll('.tourney-team-name')];
+  const empty=inputs.find(i=>!i.value.trim());
+  if(empty) empty.value=name;
+  else { addTourneyTeamRow(); document.querySelectorAll('.tourney-team-name').at(-1).value=name; }
+  showToast(`Added "${name}"`);
 }
 
 function renderTourneyList() {
@@ -1777,7 +1832,8 @@ Object.assign(window,{
   gotoTeamsMgr, saveCurrentAsTeam, deleteSavedTeam,
   gotoStats,
   gotoTournaments, createTournament, viewTournament, renderTournamentsPage,
-  addTourneyTeamRow, exportSchedulePDF
+  addTourneyTeamRow, exportSchedulePDF, quickAddTourneyTeam,
+  saveCurrentPlanAsTeam, loadSavedTeamIntoPlan
 });
 
 // ─── INIT ────────────────────────────────────────────────────
