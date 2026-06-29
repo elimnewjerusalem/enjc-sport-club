@@ -1443,14 +1443,51 @@ function gotoTournaments() { renderTournamentsPage(); nav('tournaments'); }
 function renderTournamentsPage() {
   $('tournaments-content').innerHTML=`
     <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">🏆 Tournaments</div>
-    <div style="font-size:12px;color:var(--text-3);margin-bottom:18px">Group matches together, track the points table</div>
-    <div style="display:flex;gap:6px;margin-bottom:16px">
-      <input class="form-input" id="new-tourney-name" placeholder="e.g. ENJC Summer Cup 2026" style="flex:1"/>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:16px">Add teams, generate a full fixture schedule, track the points table</div>
+
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Tournament Name</label>
+        <input class="form-input" id="new-tourney-name" placeholder="e.g. ENJC Summer Cup 2026"/>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="form-group" style="flex:1;margin-bottom:0">
+          <label class="form-label">Start Date</label>
+          <input class="form-input" id="new-tourney-start" type="date" value="${new Date().toISOString().split('T')[0]}"/>
+        </div>
+        <div class="form-group" style="width:90px;margin-bottom:0">
+          <label class="form-label">Days</label>
+          <input class="form-input" id="new-tourney-days" type="number" min="1" value="2"/>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Venue <span style="color:var(--text-4)">(optional)</span></label>
+        <input class="form-input" id="new-tourney-venue" placeholder="e.g. ENJC Ground, Tondiarpet"/>
+      </div>
+      <div class="form-label" style="margin-bottom:6px">Teams (min 2)</div>
+      <div id="tourney-team-rows"></div>
+      <button onclick="addTourneyTeamRow()"
+        style="margin-top:6px;width:100%;background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:8px;font-family:var(--font-display);font-size:13px;font-weight:700">+ Add Team</button>
       <button onclick="createTournament()"
-        style="background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:0 16px;font-family:var(--font-display);font-size:13px;font-weight:700;white-space:nowrap">+ Add</button>
+        style="margin-top:12px;width:100%;background:linear-gradient(135deg,var(--gold),#E8B84B);border:none;color:#FFF;border-radius:8px;padding:11px;font-family:var(--font-display);font-size:14px;font-weight:700">
+        🏆 Create Tournament & Generate Schedule
+      </button>
     </div>
+
     <div id="tourney-list"></div>`;
+  for(let i=0;i<2;i++) addTourneyTeamRow();
   renderTourneyList();
+}
+
+function addTourneyTeamRow() {
+  const cont=$('tourney-team-rows');
+  const idx=cont.children.length+1;
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+  row.innerHTML=`
+    <input class="form-input tourney-team-name" placeholder="Team ${idx} name" style="flex:1;padding:8px 10px;font-size:13px"/>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-3);font-size:16px;padding:0 6px">✕</button>`;
+  cont.appendChild(row);
 }
 
 function renderTourneyList() {
@@ -1468,14 +1505,54 @@ function renderTourneyList() {
   }).join('');
 }
 
+// ─── ROUND-ROBIN FIXTURE GENERATOR ──────────────────────────
+function generateRoundRobin(teams) {
+  let arr=[...teams];
+  const hasBye = arr.length%2!==0;
+  if(hasBye) arr.push('BYE');
+  const n=arr.length, half=n/2, rounds=[];
+  for(let r=0;r<n-1;r++) {
+    const roundMatches=[];
+    for(let i=0;i<half;i++) {
+      const a=arr[i], b=arr[n-1-i];
+      if(a!=='BYE'&&b!=='BYE') roundMatches.push([a,b]);
+    }
+    rounds.push(roundMatches);
+    const fixed=arr[0], rest=arr.slice(1);
+    rest.unshift(rest.pop());
+    arr=[fixed,...rest];
+  }
+  return rounds;
+}
+
+function buildSchedule(teams, startDate, days, venue) {
+  const rounds=generateRoundRobin(teams);
+  const allMatches=rounds.flat();
+  const total=allMatches.length;
+  const dayCount=Math.max(1, days||1);
+  const perDay=Math.ceil(total/dayCount);
+  return allMatches.map((pair,i)=>{
+    const dayIdx=Math.min(dayCount-1, Math.floor(i/perDay));
+    const d=new Date(startDate||Date.now()); d.setDate(d.getDate()+dayIdx);
+    return {team1:pair[0], team2:pair[1], date:d.toISOString().split('T')[0], venue:venue||'TBD', played:false};
+  });
+}
+
 function createTournament() {
   const name=$('new-tourney-name').value.trim();
+  const start=$('new-tourney-start').value;
+  const days=parseInt($('new-tourney-days').value)||1;
+  const venue=$('new-tourney-venue').value.trim();
+  const teams=[...document.querySelectorAll('.tourney-team-name')].map(i=>i.value.trim()).filter(Boolean);
+
   if(!name) { showToast('Enter tournament name'); return; }
-  S.tournaments.push({id:Date.now(),name,createdAt:Date.now()});
+  if(teams.length<2) { showToast('Add at least 2 teams'); return; }
+
+  const fixtures=buildSchedule(teams, start, days, venue);
+  S.tournaments.push({id:Date.now(), name, teams, startDate:start, days, venue, fixtures, createdAt:Date.now()});
   saveTournaments();
-  $('new-tourney-name').value='';
-  renderTourneyList();
-  showToast('Tournament created ✓');
+  showToast(`Tournament created — ${fixtures.length} fixtures generated ✓`);
+  renderTournamentsPage();
 }
 
 function viewTournament(id) {
@@ -1499,11 +1576,40 @@ function viewTournament(id) {
   });
   const rows=Object.values(table).sort((a,b)=>b.pts-a.pts);
 
+  // match a fixture against played history (either team order) to show result
+  const findPlayed=(t1,t2)=>matches.find(m=>m.status==='done'&&
+    ((m.team1.name===t1&&m.team2.name===t2)||(m.team1.name===t2&&m.team2.name===t1)));
+
+  const fixturesByDate={};
+  (t.fixtures||[]).forEach(f=>{ (fixturesByDate[f.date]=fixturesByDate[f.date]||[]).push(f); });
+  const dateKeys=Object.keys(fixturesByDate).sort();
+
   $('tournaments-content').innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
       <button onclick="renderTournamentsPage()" style="background:none;border:none;color:var(--gold-hi);font-size:22px;padding:0 4px;font-family:var(--font-display)">←</button>
-      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--gold-hi)">${t.name}</div>
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--gold-hi);flex:1">${t.name}</div>
+      ${t.fixtures?.length?`<button onclick="exportSchedulePDF(${t.id})" style="background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:7px 12px;font-family:var(--font-display);font-size:11px;font-weight:700;white-space:nowrap">📄 Schedule PDF</button>`:''}
     </div>
+
+    ${dateKeys.length?`
+      <div class="sec-label">📅 Probable Schedule</div>
+      ${dateKeys.map(date=>`
+        <div style="font-size:11px;font-weight:700;color:var(--text-2);margin:10px 0 6px">${new Date(date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</div>
+        ${fixturesByDate[date].map(f=>{
+          const played=findPlayed(f.team1,f.team2);
+          return `<div class="match-card" style="${played?'':'cursor:default'}" ${played?`onclick="window.resumeOrView(${played.id})"`:''}>
+            <div class="match-meta"><span class="match-format">📍 ${f.venue}</span>${played?`<span class="match-format" style="color:var(--green)">✓ Played</span>`:`<span class="match-format" style="color:var(--text-3)">⏳ Upcoming</span>`}</div>
+            <div class="match-teams">
+              <span class="mt-name">${f.team1}</span>
+              <span class="mt-score" style="font-size:12px;flex:1.2;text-align:center;color:var(--text-3)">vs</span>
+              <span class="mt-name" style="text-align:right">${f.team2}</span>
+            </div>
+            ${played?`<div class="match-result">🏆 ${played.winner||'Tied'}${played.winner?' won':''}</div>`:''}
+          </div>`;
+        }).join('')}
+      `).join('')}
+    `:''}
+
     <div class="sec-label">Points Table</div>
     <div class="stats-card" style="margin-bottom:16px">
       <div class="stats-head"><div class="sh-name">Team</div><div class="sh-stat">P</div><div class="sh-stat">W</div><div class="sh-stat">L</div><div class="sh-stat">Pts</div></div>
@@ -1513,7 +1619,7 @@ function viewTournament(id) {
           <div class="stat-val">${r.p}</div><div class="stat-val">${r.w}</div><div class="stat-val">${r.l}</div><div class="stat-val gold">${r.pts}</div>
         </div>`).join(''):`<div style="padding:14px;font-size:12px;color:var(--text-3)">No completed matches yet</div>`}
     </div>
-    <div class="sec-label">Matches (${matches.length})</div>
+    <div class="sec-label">Matches Played (${matches.length})</div>
     <div id="tourney-match-list"></div>`;
 
   const cont=$('tourney-match-list');
@@ -1534,6 +1640,39 @@ function viewTournament(id) {
       <div class="match-result">${m.winner!==undefined&&m.status==='done'?(m.winner?'🏆 '+m.winner+' won':'🤝 Match Tied'):'⚡ In Progress'}</div>
     </div>`;
   }).join('');
+}
+
+function exportSchedulePDF(id) {
+  const t=S.tournaments.find(x=>x.id===id); if(!t||!t.fixtures?.length) return;
+  const byDate={};
+  t.fixtures.forEach(f=>{ (byDate[f.date]=byDate[f.date]||[]).push(f); });
+  const dateKeys=Object.keys(byDate).sort();
+  const fmtD=d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+
+  const pdfArea=$('pdf-area');
+  pdfArea.innerHTML=`
+    <div class="pdf-logo">🦁 ENJC Sports Club</div>
+    <div class="pdf-title">📅 ${t.name} — Probable Schedule</div>
+    <div class="pdf-meta">${t.teams.length} Teams · ${t.fixtures.length} Fixtures · ${t.venue||'Venue TBD'}</div>
+
+    ${dateKeys.map(date=>`
+      <div class="pdf-innings-title" style="margin-top:14px">${fmtD(date)}</div>
+      <table class="pdf-table" style="font-size:11px">
+        <tr><th>Team 1</th><th></th><th>Team 2</th><th>Venue</th></tr>
+        ${byDate[date].map(f=>`
+          <tr>
+            <td><b>${f.team1}</b></td>
+            <td style="text-align:center;color:#999">vs</td>
+            <td><b>${f.team2}</b></td>
+            <td style="color:#888;font-size:10px">${f.venue}</td>
+          </tr>`).join('')}
+      </table>
+    `).join('')}
+
+    <div class="pdf-footer">ENJC Sports Club · ${t.name} · Game on Fire 🔥</div>
+  `;
+  pdfArea.classList.remove('hidden');
+  setTimeout(()=>{ window.print(); pdfArea.classList.add('hidden'); }, 200);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1637,7 +1776,8 @@ Object.assign(window,{
   deleteCurrentMatch, confirmDelete,
   gotoTeamsMgr, saveCurrentAsTeam, deleteSavedTeam,
   gotoStats,
-  gotoTournaments, createTournament, viewTournament, renderTournamentsPage
+  gotoTournaments, createTournament, viewTournament, renderTournamentsPage,
+  addTourneyTeamRow, exportSchedulePDF
 });
 
 // ─── INIT ────────────────────────────────────────────────────
