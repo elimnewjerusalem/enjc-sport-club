@@ -257,7 +257,16 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
   .pdf-footer{margin-top:20px;font-size:10px;color:#999;text-align:center;border-top:1px solid #eee;padding-top:8px;}
 }
 
-/* roster row for match plan page */
-.roster-row {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
-}
+/* roster card for match plan page */
+.sport-toggle{display:flex;gap:8px;margin-bottom:16px;}
+.sport-toggle-btn{flex:1;padding:10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg);font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--text-3);}
+.sport-toggle-btn.active{border-color:var(--gold);background:var(--gold-dim);color:var(--gold-hi);}
+
+.roster-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;}
+.roster-card-top{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.roster-del{background:none;border:none;color:var(--text-3);font-size:16px;padding:0 4px;flex-shrink:0;}
+.roster-card-fields{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.roster-card-fields select{flex:1;min-width:90px;padding:7px 6px;font-size:11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);}
+.roster-flags{display:flex;gap:6px;}
+.flag-btn{flex:1;padding:6px 4px;font-size:10px;font-weight:700;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-3);font-family:var(--font-body);}
+.flag-btn.active{border-color:var(--gold);background:var(--gold);color:#FFF;}

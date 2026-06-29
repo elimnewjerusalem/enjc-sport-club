@@ -293,6 +293,8 @@ function resumeOrView(id) {
 // ══════════════════════════════════════════════════════════════
 //   MATCH PLAN — ROSTER PAGE
 // ══════════════════════════════════════════════════════════════
+let planSport='cricket';
+
 function gotoMatchPlan() {
   renderMatchPlanPage();
   nav('plan');
@@ -301,143 +303,159 @@ function gotoMatchPlan() {
 function renderMatchPlanPage() {
   $('plan-content').innerHTML=`
     <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">📋 Match Plan</div>
-    <div style="font-size:12px;color:var(--text-3);margin-bottom:18px">Build your team roster · export as PDF</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:16px">Build your team roster · export as PDF</div>
 
-    <div class="form-group">
-      <label class="form-label">Venue / Match Name</label>
-      <input class="form-input" id="plan-venue" placeholder="e.g. ENJC Ground, Tondiarpet"/>
+    <div class="sport-toggle">
+      <button class="sport-toggle-btn ${planSport==='cricket'?'active':''}" onclick="setPlanSport('cricket')">🏏 Cricket</button>
+      <button class="sport-toggle-btn ${planSport==='football'?'active':''}" onclick="setPlanSport('football')">⚽ Football</button>
     </div>
+
     <div class="form-group">
       <label class="form-label">Date</label>
       <input class="form-input" id="plan-date" type="date" value="${new Date().toISOString().split('T')[0]}"/>
     </div>
 
-    ${renderRosterBlock('plan-team1','Team 1')}
-    ${renderRosterBlock('plan-team2','Team 2')}
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+      <div class="form-group" style="margin-bottom:10px">
+        <input class="form-input roster-team-name" id="plan-team-name" placeholder="Team name e.g. ENJC Lions"/>
+      </div>
+      <div style="font-size:9px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Players</div>
+      <div id="roster-rows"></div>
+      <button onclick="addRosterRow()"
+        style="margin-top:8px;width:100%;background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:9px 14px;font-family:var(--font-display);font-size:13px;font-weight:700">
+        + Add Player
+      </button>
+    </div>
 
     <button class="start-btn" onclick="exportRosterPDF()" style="background:linear-gradient(135deg,var(--gold),#E8B84B)">
       📄 Export Match Plan PDF
     </button>
   `;
-  // seed 11 rows each
-  for(let i=0;i<11;i++) { addRosterRow('plan-team1'); addRosterRow('plan-team2'); }
+  for(let i=0;i<11;i++) addRosterRow();
 }
 
-function renderRosterBlock(id, label) {
-  return `
-    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
-      <div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold-hi);margin-bottom:10px">${label}</div>
-      <div class="form-group" style="margin-bottom:10px">
-        <input class="form-input roster-team-name" data-block="${id}" placeholder="${label} name e.g. ENJC Lions"/>
-      </div>
-      <div style="display:grid;grid-template-columns:30px 1fr 90px;gap:6px;margin-bottom:6px;padding:0 2px">
-        <span style="font-size:9px;color:var(--text-4)">#</span>
-        <span style="font-size:9px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em">Player Name</span>
-        <span style="font-size:9px;color:var(--text-4);text-transform:uppercase;letter-spacing:0.05em">Role</span>
-      </div>
-      <div id="${id}-rows"></div>
-      <button onclick="addRosterRow('${id}')"
-        style="margin-top:8px;background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:6px;padding:7px 14px;font-family:var(--font-display);font-size:13px;font-weight:600">
-        + Add Player
-      </button>
-    </div>`;
+function setPlanSport(sport) {
+  planSport=sport;
+  renderMatchPlanPage();
 }
 
-function addRosterRow(blockId) {
-  const cont=$(`${blockId}-rows`);
+function roleOptionsHTML() {
+  return planSport==='cricket'
+    ? `<option value="Batter">Batter</option><option value="Bowler">Bowler</option><option value="All-Rounder">All-Rounder</option>`
+    : `<option value="Goalkeeper">Goalkeeper</option><option value="Defender">Defender</option><option value="Midfielder">Midfielder</option><option value="Forward">Forward</option>`;
+}
+
+function addRosterRow() {
+  const cont=$('roster-rows');
   const idx=cont.children.length+1;
   const row=document.createElement('div');
-  row.className='roster-row';
+  row.className='roster-card';
   row.innerHTML=`
-    <span class="player-num">${idx}</span>
-    <input class="form-input roster-name" placeholder="Player ${idx}"
-      style="padding:8px 10px;font-size:13px;flex:1"/>
-    <select class="form-input roster-role"
-      style="padding:8px 6px;font-size:12px;width:90px;flex-shrink:0">
-      <option>Batter</option>
-      <option>Bowler</option>
-      <option>All-round</option>
-      <option>WK</option>
-      <option>Captain</option>
-    </select>
-    <button onclick="this.parentElement.remove();reindexRoster('${blockId}')"
-      style="background:none;border:none;color:var(--text-3);font-size:16px;padding:0 4px">✕</button>
+    <div class="roster-card-top">
+      <span class="player-num">${idx}</span>
+      <input class="form-input roster-name" placeholder="Player ${idx}" style="padding:8px 10px;font-size:13px;flex:1"/>
+      <button class="roster-del" onclick="this.closest('.roster-card').remove();reindexRoster()">✕</button>
+    </div>
+    <div class="roster-card-fields">
+      <select class="roster-role" onchange="updateRoleFields(this)">${roleOptionsHTML()}</select>
+      ${planSport==='cricket' ? `
+        <select class="roster-bat-hand"><option>Right-hand</option><option>Left-hand</option></select>
+        <select class="roster-bowl-hand" style="display:none"><option>Right-arm</option><option>Left-arm</option></select>
+        <select class="roster-bowl-type" style="display:none"><option>Seam</option><option>Spin</option></select>
+      ` : ``}
+    </div>
+    <div class="roster-flags">
+      ${planSport==='cricket' ? `<button type="button" class="flag-btn" data-flag="WK" onclick="toggleFlag(this,'WK')">🧤 WK</button>` : ``}
+      <button type="button" class="flag-btn" data-flag="C" onclick="toggleFlag(this,'C')">© Captain</button>
+      <button type="button" class="flag-btn" data-flag="VC" onclick="toggleFlag(this,'VC')">Vice-C</button>
+    </div>
   `;
   cont.appendChild(row);
+  if(planSport==='cricket') updateRoleFields(row.querySelector('.roster-role'));
 }
 
-function reindexRoster(blockId) {
-  $(`${blockId}-rows`).querySelectorAll('.player-num')
-    .forEach((el,i)=>el.textContent=i+1);
+function updateRoleFields(sel) {
+  const card=sel.closest('.roster-card');
+  const role=sel.value;
+  const bat=card.querySelector('.roster-bat-hand'), bowlH=card.querySelector('.roster-bowl-hand'), bowlT=card.querySelector('.roster-bowl-type');
+  if(!bat) return; // football — no bat/bowl fields
+  bat.style.display = (role==='Batter'||role==='All-Rounder') ? '' : 'none';
+  bowlH.style.display = (role==='Bowler'||role==='All-Rounder') ? '' : 'none';
+  bowlT.style.display = (role==='Bowler'||role==='All-Rounder') ? '' : 'none';
+}
+
+function toggleFlag(btn,flag) {
+  const cont=$('roster-rows');
+  const wasActive=btn.classList.contains('active');
+  cont.querySelectorAll(`.flag-btn[data-flag="${flag}"]`).forEach(b=>b.classList.remove('active'));
+  if(!wasActive) btn.classList.add('active');
+}
+
+function reindexRoster() {
+  $('roster-rows').querySelectorAll('.player-num').forEach((el,i)=>el.textContent=i+1);
 }
 
 function exportRosterPDF() {
-  const venue = $('plan-venue').value.trim() || 'ENJC Ground';
-  const dateVal = $('plan-date').value;
-  const fmtD = dateVal ? new Date(dateVal).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : fmtDate(Date.now());
+  const dateVal=$('plan-date').value;
+  const fmtD=dateVal?new Date(dateVal).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):fmtDate(Date.now());
+  const teamName=$('plan-team-name').value.trim()||'ENJC Team';
 
-  function getBlock(blockId) {
-    const name = $(`plan-content`).querySelector(`[data-block="${blockId}"]`)?.value.trim() || (blockId==='plan-team1'?'Team 1':'Team 2');
-    const rows = [...$(`${blockId}-rows`).querySelectorAll('.roster-row')];
-    return {
-      name,
-      players: rows.map((r,i)=>({
-        num: i+1,
-        name: r.querySelector('.roster-name').value.trim() || `Player ${i+1}`,
-        role: r.querySelector('.roster-role').value
-      }))
-    };
-  }
+  const cards=[...$('roster-rows').querySelectorAll('.roster-card')];
+  const players=cards.map((card,i)=>{
+    const name=card.querySelector('.roster-name').value.trim()||`Player ${i+1}`;
+    const role=card.querySelector('.roster-role').value;
+    const batHand=card.querySelector('.roster-bat-hand');
+    const bowlHand=card.querySelector('.roster-bowl-hand');
+    const bowlType=card.querySelector('.roster-bowl-type');
+    let detail='';
+    if(planSport==='cricket') {
+      const parts=[];
+      if(batHand && batHand.style.display!=='none') parts.push(batHand.value);
+      if(bowlHand && bowlHand.style.display!=='none') parts.push(`${bowlType.value} (${bowlHand.value})`);
+      detail=parts.join(' · ');
+    }
+    const flags=[...card.querySelectorAll('.flag-btn.active')].map(b=>b.dataset.flag);
+    return {num:i+1,name,role,detail,flags};
+  }).filter(p=>p.name);
 
-  const t1=getBlock('plan-team1'), t2=getBlock('plan-team2');
-  const opener1=t1.players[0]?.name||'—', opener2=t2.players[0]?.name||'—';
-  const last1=t1.players[t1.players.length-1]?.name||'—';
-  const last2=t2.players[t2.players.length-1]?.name||'—';
-  const captain1=t1.players.find(p=>p.role==='Captain')?.name||t1.players[0]?.name||'—';
-  const captain2=t2.players.find(p=>p.role==='Captain')?.name||t2.players[0]?.name||'—';
-  const wk1=t1.players.find(p=>p.role==='WK')?.name||'—';
-  const wk2=t2.players.find(p=>p.role==='WK')?.name||'—';
+  const captain=players.find(p=>p.flags.includes('C'))?.name||players[0]?.name||'—';
+  const viceCaptain=players.find(p=>p.flags.includes('VC'))?.name||'—';
+  const wk=planSport==='cricket'?(players.find(p=>p.flags.includes('WK'))?.name||'—'):null;
+  const opener=players[0]?.name||'—';
+  const last=players[players.length-1]?.name||'—';
 
   const pdfArea=$('pdf-area');
   pdfArea.innerHTML=`
     <div class="pdf-logo">🦁 ENJC Sports Club</div>
     <div class="pdf-title">📋 Match Plan & Team Roster</div>
-    <div class="pdf-meta">${venue} · ${fmtD}</div>
-    <div class="pdf-result">${t1.name} vs ${t2.name}</div>
+    <div class="pdf-meta">${planSport==='cricket'?'🏏 Cricket':'⚽ Football'} · ${fmtD}</div>
+    <div class="pdf-result">${teamName}</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">
-      ${[t1,t2].map(team=>`
-        <div>
-          <div class="pdf-innings-title">${team.name}</div>
-          <div style="font-size:10px;color:#666;margin-bottom:6px">
-            Captain: <b>${team===t1?captain1:captain2}</b> · WK: <b>${team===t1?wk1:wk2}</b>
-          </div>
-          <table class="pdf-table" style="font-size:11px">
-            <tr><th>#</th><th>Player</th><th>Role</th></tr>
-            ${team.players.filter(p=>p.name).map(p=>`
-              <tr>
-                <td style="width:24px;text-align:center;color:#999">${p.num}</td>
-                <td><b>${p.num===1?'★ ':p.num===team.players.length?'↓ ':''}</b>${p.name}</td>
-                <td style="color:#888;font-size:10px">${p.role}</td>
-              </tr>`).join('')}
-          </table>
-          <div style="font-size:10px;color:#888;margin-top:6px">
-            ★ Opener · ↓ Last bat
-          </div>
-        </div>`).join('')}
+    <div style="font-size:11px;color:#666;margin:10px 0">
+      Captain: <b>${captain}</b> · Vice-Captain: <b>${viceCaptain}</b>${wk?` · WK: <b>${wk}</b>`:''}
     </div>
 
-    <div class="pdf-innings-title" style="margin-top:16px">Batting Order Summary</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      ${[{t:t1,c:captain1,w:wk1,o:opener1,l:last1},{t:t2,c:captain2,w:wk2,o:opener2,l:last2}].map(({t,c,w,o,l})=>`
-        <div style="background:#FFF8E8;border-radius:6px;padding:10px;font-size:11px">
-          <div style="font-weight:700;color:#A67010;margin-bottom:6px">${t.name}</div>
-          <div>Opener: <b>${o}</b></div>
-          <div>Captain: <b>${c}</b></div>
-          <div>Wicket-keeper: <b>${w}</b></div>
-          <div>Last bat: <b>${l}</b></div>
-          <div style="color:#999;margin-top:4px">Total: ${t.players.filter(p=>p.name).length} players</div>
-        </div>`).join('')}
+    <table class="pdf-table" style="font-size:11px">
+      <tr><th>#</th><th>Player</th><th>Role</th><th>Details</th><th>Flags</th></tr>
+      ${players.map(p=>`
+        <tr>
+          <td style="width:24px;text-align:center;color:#999">${p.num}</td>
+          <td><b>${p.num===1?'★ ':p.num===players.length?'↓ ':''}</b>${p.name}</td>
+          <td style="color:#888;font-size:10px">${p.role}</td>
+          <td style="color:#888;font-size:10px">${p.detail||'—'}</td>
+          <td style="color:#A67010;font-size:10px;font-weight:700">${p.flags.join(' ')||''}</td>
+        </tr>`).join('')}
+    </table>
+    <div style="font-size:10px;color:#888;margin-top:6px">★ Opener · ↓ Last bat</div>
+
+    <div class="pdf-innings-title" style="margin-top:16px">Summary</div>
+    <div style="background:#FFF8E8;border-radius:6px;padding:10px;font-size:11px">
+      <div style="font-weight:700;color:#A67010;margin-bottom:6px">${teamName}</div>
+      <div>Opener: <b>${opener}</b></div>
+      <div>Captain: <b>${captain}</b> · Vice-Captain: <b>${viceCaptain}</b></div>
+      ${wk?`<div>Wicket-keeper: <b>${wk}</b></div>`:''}
+      <div>Last bat: <b>${last}</b></div>
+      <div style="color:#999;margin-top:4px">Total: ${players.length} players</div>
     </div>
 
     <div class="pdf-footer">ENJC Sports Club Match Plan · ${fmtD} · Game on Fire 🔥</div>
@@ -1611,6 +1629,7 @@ function shareScorecardImage() {
 Object.assign(window,{
   nav, gotoNewMatch, gotoMatchPlan, resumeOrView,
   addPlayerRow, reindexPlayers, addRosterRow, reindexRoster,
+  setPlanSport, updateRoleFields, toggleFlag,
   selectToss, startMatch,
   addBall, selectModalItem, closeModal, recordWicket, undoLastBall,
   fbEvent, fbHalfTime, fbFullTime, fbUndo,
