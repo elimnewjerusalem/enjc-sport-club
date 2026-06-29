@@ -141,3 +141,41 @@ export async function saveTournamentFB(t) {
   const col = await tournamentsCol();
   await setDoc(doc(col, String(t.id)), { ...t, updatedAt: Date.now() });
 }
+
+/* ─── CLUB MEMBERS (shared across all 5 phones) ─────────────── */
+async function membersCol() {
+  const d = await initFirebase();
+  return collection(d, 'members');
+}
+export async function subscribeToMembers(onChange, onError) {
+  const col = await membersCol();
+  return onSnapshot(col,
+    snapshot => onChange(snapshot.docs.map(d => d.data())),
+    onError
+  );
+}
+export async function saveMemberFB(member) {
+  const col = await membersCol();
+  await setDoc(doc(col, String(member.id)), { ...member, updatedAt: Date.now() });
+}
+export async function deleteMemberFB(memberId) {
+  const col = await membersCol();
+  await deleteDoc(doc(col, String(memberId)));
+}
+
+/* ─── ATTENDANCE SESSIONS (shared across all 5 phones) ──────── */
+async function attendanceCol() {
+  const d = await initFirebase();
+  return collection(d, 'attendance');
+}
+export async function subscribeToAttendance(onChange, onError) {
+  const col = await attendanceCol();
+  return onSnapshot(col,
+    snapshot => onChange(snapshot.docs.map(d => d.data())),
+    onError
+  );
+}
+export async function saveAttendanceFB(session) {
+  const col = await attendanceCol();
+  await setDoc(doc(col, String(session.id)), { ...session, updatedAt: Date.now() });
+}

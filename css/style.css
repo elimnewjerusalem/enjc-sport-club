@@ -270,3 +270,9 @@ button:active{transform:scale(0.95);transition:transform 0.08s;}
 .roster-flags{display:flex;gap:6px;}
 .flag-btn{flex:1;padding:6px 4px;font-size:10px;font-weight:700;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-3);font-family:var(--font-body);}
 .flag-btn.active{border-color:var(--gold);background:var(--gold);color:#FFF;}
+
+/* attendance */
+.att-member-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:var(--bg);}
+.att-toggle{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid var(--border);background:var(--bg);color:var(--text-3);flex-shrink:0;}
+.att-toggle.present{border-color:var(--green);background:rgba(14,159,110,0.1);color:var(--green);}
+.att-toggle.absent{border-color:var(--red);background:rgba(220,38,38,0.08);color:var(--red);}

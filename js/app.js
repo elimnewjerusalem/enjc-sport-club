@@ -44,7 +44,9 @@ import {
   subscribeToMatchHistory, subscribeToMatch,
   saveMatch as fbSave, deleteMatch as fbDelete, batchDeleteMatches,
   subscribeToTeams, saveTeamFB, deleteTeamFB,
-  subscribeToTournaments, saveTournamentFB
+  subscribeToTournaments, saveTournamentFB,
+  subscribeToMembers, saveMemberFB, deleteMemberFB,
+  subscribeToAttendance, saveAttendanceFB
 } from './firebase.js';
 
 // ─── STATE ───────────────────────────────────────────────────
@@ -53,10 +55,14 @@ const S = {
   history: JSON.parse(localStorage.getItem('enjc_matches') || '[]'),
   teams:   JSON.parse(localStorage.getItem('enjc_teams') || '[]'),
   tournaments: JSON.parse(localStorage.getItem('enjc_tournaments') || '[]'),
+  members: JSON.parse(localStorage.getItem('enjc_members') || '[]'),
+  attendance: JSON.parse(localStorage.getItem('enjc_attendance') || '[]'),
   sport:   'cricket'
 };
 function saveTeams()       { localStorage.setItem('enjc_teams', JSON.stringify(S.teams)); }
 function saveTournaments() { localStorage.setItem('enjc_tournaments', JSON.stringify(S.tournaments)); }
+function saveMembers()     { localStorage.setItem('enjc_members', JSON.stringify(S.members)); }
+function saveAttendance()  { localStorage.setItem('enjc_attendance', JSON.stringify(S.attendance)); }
 
 async function pushTeamFB(team) {
   try { await saveTeamFB(team); }
@@ -71,6 +77,40 @@ async function pushTournamentFB(t) {
     console.warn('Tournament not synced (offline)', e);
     showToast(e?.code==='permission-denied' ? '⚠️ Tournament not synced to other phones (check Firestore rules)' : '⚠️ Tournament saved on this phone only');
   }
+}
+async function pushMemberFB(member) {
+  try { await saveMemberFB(member); }
+  catch(e) {
+    console.warn('Member not synced (offline)', e);
+    showToast(e?.code==='permission-denied' ? '⚠️ Member not synced to other phones (check Firestore rules)' : '⚠️ Member saved on this phone only');
+  }
+}
+async function pushAttendanceFB(session) {
+  try { await saveAttendanceFB(session); }
+  catch(e) {
+    console.warn('Attendance not synced (offline)', e);
+    showToast(e?.code==='permission-denied' ? '⚠️ Attendance not synced to other phones (check Firestore rules)' : '⚠️ Attendance saved on this phone only');
+  }
+}
+let membersUnsub=null, attendanceUnsub=null;
+function initAttendanceSync() {
+  if(membersUnsub) membersUnsub();
+  subscribeToMembers(remote=>{
+    const remoteIds=new Set(remote.map(m=>m.id));
+    const localOnly=S.members.filter(m=>!remoteIds.has(m.id));
+    S.members=[...remote,...localOnly].sort((a,b)=>a.name.localeCompare(b.name));
+    localStorage.setItem('enjc_members', JSON.stringify(S.members));
+    if(activePage()==='attendance') renderAttendancePage();
+  }, e=>console.warn('members sub error',e)).then(unsub=>{ membersUnsub=unsub; });
+
+  if(attendanceUnsub) attendanceUnsub();
+  subscribeToAttendance(remote=>{
+    const remoteIds=new Set(remote.map(a=>a.id));
+    const localOnly=S.attendance.filter(a=>!remoteIds.has(a.id));
+    S.attendance=[...remote,...localOnly].sort((a,b)=>b.id-a.id);
+    localStorage.setItem('enjc_attendance', JSON.stringify(S.attendance));
+    if(activePage()==='attendance') renderAttendancePage();
+  }, e=>console.warn('attendance sub error',e)).then(unsub=>{ attendanceUnsub=unsub; });
 }
 let teamsUnsub=null, tourneyUnsub=null;
 function initTeamsTourneySync() {
@@ -1774,6 +1814,220 @@ function exportSchedulePDF(id) {
 }
 
 // ══════════════════════════════════════════════════════════════
+//   ATTENDANCE / COACHING REGISTER
+// ══════════════════════════════════════════════════════════════
+let attTab='mark';
+
+function gotoAttendance() {
+  attTab = S.members.length ? 'mark' : 'members';
+  renderAttendancePage();
+  nav('attendance');
+}
+
+function setAttTab(tab) { attTab=tab; renderAttendancePage(); }
+
+function renderAttendancePage() {
+  $('attendance-content').innerHTML=`
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--gold-hi);margin-bottom:4px">📋 Attendance</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:16px">Coaching register — mark whichever day you hold a session, weekly or daily</div>
+    <div class="sport-toggle">
+      <button class="sport-toggle-btn ${attTab==='members'?'active':''}" onclick="setAttTab('members')">👥 Members</button>
+      <button class="sport-toggle-btn ${attTab==='mark'?'active':''}" onclick="setAttTab('mark')">✓ Mark</button>
+      <button class="sport-toggle-btn ${attTab==='reports'?'active':''}" onclick="setAttTab('reports')">📊 Reports</button>
+    </div>
+    <div id="att-tab-body"></div>
+  `;
+  if(attTab==='members') renderAttMembersTab();
+  else if(attTab==='mark') renderAttMarkTab();
+  else renderAttReportsTab();
+}
+
+// ─── MEMBERS TAB ─────────────────────────────────────────────
+function renderAttMembersTab() {
+  $('att-tab-body').innerHTML=`
+    <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input class="form-input" id="new-member-name" placeholder="Member name" style="flex:1"/>
+        <input class="form-input" id="new-member-phone" placeholder="Phone (optional)" style="flex:1"/>
+      </div>
+      <button onclick="addMember()"
+        style="width:100%;background:linear-gradient(135deg,var(--gold),#E8B84B);border:none;color:#FFF;border-radius:8px;padding:10px;font-family:var(--font-display);font-size:13px;font-weight:700">+ Add Member</button>
+    </div>
+    <div class="sec-label">Members (${S.members.length})</div>
+    <div id="member-list"></div>
+  `;
+  const cont=$('member-list');
+  if(!S.members.length) {
+    cont.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No members yet.<br>Add the names of regulars above!</div></div>`;
+    return;
+  }
+  cont.innerHTML=S.members.map(m=>`
+    <div class="match-card" style="cursor:default">
+      <div class="match-teams">
+        <div class="player-ava" style="margin-right:6px">${inits(m.name)}</div>
+        <span class="mt-name" style="font-size:14px;flex:1;text-align:left">${m.name}${m.phone?` <span style="color:var(--text-3);font-size:11px;font-weight:400">· ${m.phone}</span>`:''}</span>
+        <button onclick="deleteMember(${m.id})"
+          style="background:rgba(220,38,38,0.08);color:var(--red);border:1px solid rgba(220,38,38,0.2);border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function addMember() {
+  const name=$('new-member-name').value.trim();
+  const phone=$('new-member-phone').value.trim();
+  if(!name) { showToast('Enter member name'); return; }
+  if(S.members.find(m=>m.name.toLowerCase()===name.toLowerCase())) { showToast('Member already exists'); return; }
+  const member={id:Date.now(), name, phone, createdAt:Date.now()};
+  S.members.push(member);
+  S.members.sort((a,b)=>a.name.localeCompare(b.name));
+  saveMembers(); pushMemberFB(member);
+  showToast(`Added "${name}" ✓`);
+  renderAttMembersTab();
+  $('new-member-name').value=''; $('new-member-phone').value='';
+}
+
+function deleteMember(id) {
+  S.members=S.members.filter(m=>m.id!==id);
+  saveMembers(); renderAttMembersTab();
+  deleteMemberFB(id).catch(e=>console.warn('member delete sync failed',e));
+  showToast('Member removed');
+}
+
+// ─── MARK TAB ────────────────────────────────────────────────
+function renderAttMarkTab(dateOverride) {
+  if(!S.members.length) {
+    $('att-tab-body').innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Add members first<br>(Members tab)</div></div>`;
+    return;
+  }
+  const date = dateOverride || new Date().toISOString().split('T')[0];
+  const existing = S.attendance.find(a=>a.date===date);
+  const presentSet = new Set(existing ? existing.presentIds : S.members.map(m=>m.id)); // default: all present
+
+  $('att-tab-body').innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input class="form-input" id="att-date" type="date" value="${date}" style="flex:1" onchange="renderAttMarkTab(this.value)"/>
+      <input class="form-input" id="att-note" placeholder="Note (Weekly/Daily)" value="${existing?.note||''}" style="flex:1"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button onclick="markAllAtt(true)" style="flex:1;background:rgba(14,159,110,0.1);border:1px solid rgba(14,159,110,0.3);color:var(--green);border-radius:8px;padding:8px;font-size:12px;font-weight:700">✓ All Present</button>
+      <button onclick="markAllAtt(false)" style="flex:1;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:var(--red);border-radius:8px;padding:8px;font-size:12px;font-weight:700">✗ All Absent</button>
+    </div>
+    <div id="att-member-rows">
+      ${S.members.map(m=>`
+        <div class="att-member-row" data-mid="${m.id}">
+          <div class="player-ava">${inits(m.name)}</div>
+          <div style="flex:1"><div class="player-name">${m.name}</div></div>
+          <button class="att-toggle ${presentSet.has(m.id)?'present':'absent'}" onclick="toggleAtt(${m.id})">${presentSet.has(m.id)?'✓ Present':'✗ Absent'}</button>
+        </div>`).join('')}
+    </div>
+    <button onclick="saveAttendanceSession()"
+      style="width:100%;margin-top:10px;background:linear-gradient(135deg,var(--gold),#E8B84B);border:none;color:#FFF;border-radius:8px;padding:12px;font-family:var(--font-display);font-size:14px;font-weight:700">
+      💾 Save Attendance — ${date}
+    </button>
+  `;
+}
+
+function toggleAtt(memberId) {
+  const row=document.querySelector(`.att-member-row[data-mid="${memberId}"] .att-toggle`);
+  const isPresent=row.classList.contains('present');
+  row.classList.toggle('present', !isPresent);
+  row.classList.toggle('absent', isPresent);
+  row.textContent = isPresent ? '✗ Absent' : '✓ Present';
+}
+
+function markAllAtt(present) {
+  document.querySelectorAll('.att-toggle').forEach(btn=>{
+    btn.classList.toggle('present', present);
+    btn.classList.toggle('absent', !present);
+    btn.textContent = present ? '✓ Present' : '✗ Absent';
+  });
+}
+
+function saveAttendanceSession() {
+  const date=$('att-date').value;
+  const note=$('att-note').value.trim();
+  const presentIds=[...document.querySelectorAll('.att-member-row')]
+    .filter(row=>row.querySelector('.att-toggle').classList.contains('present'))
+    .map(row=>Number(row.dataset.mid));
+
+  let session=S.attendance.find(a=>a.date===date);
+  if(session) { session.presentIds=presentIds; session.note=note; }
+  else { session={id:Date.now(), date, note, presentIds, createdAt:Date.now()}; S.attendance.push(session); }
+  S.attendance.sort((a,b)=>b.date.localeCompare(a.date));
+  saveAttendance(); pushAttendanceFB(session);
+  showToast(`Attendance saved for ${date} — ${presentIds.length}/${S.members.length} present ✓`);
+}
+
+// ─── REPORTS TAB ─────────────────────────────────────────────
+function renderAttReportsTab() {
+  const totalSessions=S.attendance.length;
+  const memberStats=S.members.map(m=>{
+    const attended=S.attendance.filter(a=>a.presentIds.includes(m.id)).length;
+    return {name:m.name, attended, pct: totalSessions ? Math.round((attended/totalSessions)*100) : 0};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  $('att-tab-body').innerHTML=`
+    <div class="stat-row" style="grid-template-columns:1fr 1fr;padding:0 0 14px">
+      <div class="stat-card"><div class="stat-num">${totalSessions}</div><div class="stat-lbl">Sessions Held</div></div>
+      <div class="stat-card"><div class="stat-num">${S.members.length}</div><div class="stat-lbl">Members</div></div>
+    </div>
+    ${totalSessions?`<button onclick="exportAttendancePDF()" style="width:100%;margin-bottom:14px;background:var(--gold-dim);border:1px solid var(--gold-line);color:var(--gold-hi);border-radius:8px;padding:10px;font-family:var(--font-display);font-size:13px;font-weight:700">📄 Export Attendance Report PDF</button>`:''}
+
+    <div class="sec-label">Attendance % (by member)</div>
+    <div class="stats-card" style="margin-bottom:16px">
+      <div class="stats-head"><div class="sh-name">Member</div><div class="sh-stat">Attended</div><div class="sh-stat">%</div></div>
+      ${memberStats.length?memberStats.map(m=>`
+        <div class="stats-row">
+          <div class="player-ava">${inits(m.name)}</div>
+          <div style="flex:1"><div class="player-name">${m.name}</div></div>
+          <div class="stat-val">${m.attended}/${totalSessions}</div>
+          <div class="stat-val gold">${m.pct}%</div>
+        </div>`).join(''):`<div style="padding:14px;font-size:12px;color:var(--text-3)">Add members to see reports</div>`}
+    </div>
+
+    <div class="sec-label">Session Log</div>
+    <div id="att-session-log">
+      ${S.attendance.length?S.attendance.map(a=>`
+        <div class="match-card" style="cursor:default">
+          <div class="match-meta"><span class="match-format">📅 ${new Date(a.date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</span>${a.note?`<span class="match-format">${a.note}</span>`:''}</div>
+          <div class="match-result">${a.presentIds.length}/${S.members.length} present</div>
+        </div>`).join(''):`<div style="padding:14px;font-size:12px;color:var(--text-3)">No sessions recorded yet</div>`}
+    </div>
+  `;
+}
+
+function exportAttendancePDF() {
+  const totalSessions=S.attendance.length;
+  const memberStats=S.members.map(m=>{
+    const attended=S.attendance.filter(a=>a.presentIds.includes(m.id)).length;
+    return {name:m.name, attended, pct: totalSessions ? Math.round((attended/totalSessions)*100) : 0};
+  }).sort((a,b)=>b.pct-a.pct);
+
+  const pdfArea=$('pdf-area');
+  pdfArea.innerHTML=`
+    <div class="pdf-logo">🦁 ENJC Sports Club</div>
+    <div class="pdf-title">📋 Coaching Attendance Report</div>
+    <div class="pdf-meta">${totalSessions} sessions held · ${S.members.length} members · ${fmtDate(Date.now())}</div>
+
+    <div class="pdf-innings-title" style="margin-top:14px">Attendance %</div>
+    <table class="pdf-table" style="font-size:11px">
+      <tr><th>Member</th><th>Attended</th><th>%</th></tr>
+      ${memberStats.map(m=>`<tr><td><b>${m.name}</b></td><td style="text-align:center">${m.attended}/${totalSessions}</td><td style="text-align:center;color:#A67010;font-weight:700">${m.pct}%</td></tr>`).join('')}
+    </table>
+
+    <div class="pdf-innings-title" style="margin-top:14px">Session Log</div>
+    <table class="pdf-table" style="font-size:11px">
+      <tr><th>Date</th><th>Note</th><th>Present</th></tr>
+      ${S.attendance.map(a=>`<tr><td>${new Date(a.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</td><td style="color:#888">${a.note||'—'}</td><td style="text-align:center">${a.presentIds.length}/${S.members.length}</td></tr>`).join('')}
+    </table>
+
+    <div class="pdf-footer">ENJC Sports Club · Coaching Attendance · Game on Fire 🔥</div>
+  `;
+  pdfArea.classList.remove('hidden');
+  setTimeout(()=>{ window.print(); pdfArea.classList.add('hidden'); }, 200);
+}
+
+// ══════════════════════════════════════════════════════════════
 //   SHAREABLE SCORECARD IMAGE
 // ══════════════════════════════════════════════════════════════
 function shareScorecardImage() {
@@ -1876,7 +2130,9 @@ Object.assign(window,{
   gotoStats,
   gotoTournaments, createTournament, viewTournament, renderTournamentsPage,
   addTourneyTeamRow, exportSchedulePDF, quickAddTourneyTeam,
-  saveCurrentPlanAsTeam, loadSavedTeamIntoPlan
+  saveCurrentPlanAsTeam, loadSavedTeamIntoPlan,
+  gotoAttendance, setAttTab, addMember, deleteMember,
+  renderAttMarkTab, toggleAtt, markAllAtt, saveAttendanceSession, exportAttendancePDF
 });
 
 // ─── INIT ────────────────────────────────────────────────────
@@ -1886,6 +2142,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   nav('home');
   initSync();
   initTeamsTourneySync();
+  initAttendanceSync();
   renderDashboard();
 
   document.querySelectorAll('.nav-item').forEach(item=>{
